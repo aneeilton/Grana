@@ -32,7 +32,9 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
           // soma também as parcelas futuras ainda não pagas.
           const avulsos = efetivos.get(c.id)?.valor ?? 0;
           const valor = avulsos + totalComprasNoMes(compras.get(c.id), efetivos);
-          const usado = avulsos + comprasAVencer(compras.get(c.id), lancamentos, competencia);
+          // fatura já paga libera o limite e não é mais dívida
+          const avulsosEmAberto = efetivos.get(c.id)?.pago ? 0 : avulsos;
+          const usado = avulsosEmAberto + comprasAVencer(compras.get(c.id), lancamentos, competencia);
           const limite = c.limite ?? 0;
           const pct = limite > 0 ? Math.min(1, usado / limite) : 0;
           return { ...c, valor, usado, pct };
@@ -68,6 +70,32 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
         <p className="mt-2 text-sm font-semibold text-white/90">
           {formatMoney(usadoGeral)} usados · {Math.round(pctGeral * 100)}%
         </p>
+
+        {/* Saldo devedor = fatura deste mês ainda em aberto + parcelas
+            futuras não pagas (o mesmo "usado" do limite de cada cartão). */}
+        <div className="mt-4 border-t border-white/15 pt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
+            Saldo devedor por cartão
+          </p>
+          <div className="mt-1.5 space-y-1.5">
+            {[...linhas]
+              .sort((a, b) => b.usado - a.usado)
+              .map((c) => (
+                <div key={c.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate text-white/90">{c.nome}</span>
+                  <span className="shrink-0 font-bold [font-variant-numeric:tabular-nums]">
+                    {formatMoney(c.usado)}
+                  </span>
+                </div>
+              ))}
+            <div className="flex items-center justify-between gap-3 border-t border-white/15 pt-1.5 text-sm">
+              <span className="font-semibold text-white/80">Total devedor</span>
+              <span className="shrink-0 font-extrabold [font-variant-numeric:tabular-nums]">
+                {formatMoney(usadoGeral)}
+              </span>
+            </div>
+          </div>
+        </div>
       </Card>
 
       <div className="space-y-2">
