@@ -50,8 +50,12 @@ export function SemestreGrid({
         }))
         .filter((l) => l.valores.some((v) => v))
         .sort((a, b) => {
+          // Linhas com meses em branco ("—") vão pro fim: primeiro as que
+          // têm valor em todos os meses, depois as com menos lacunas; no
+          // empate, a de maior total no semestre primeiro.
+          const vazios = (l: Linha) => l.valores.filter((v) => !v).length;
           const total = (l: Linha) => l.valores.reduce<number>((s, v) => s + (v ?? 0), 0);
-          return total(b) - total(a);
+          return vazios(a) - vazios(b) || total(b) - total(a);
         });
     return { receitas: linhas("receita"), despesas: linhas("despesa") };
   }, [items, lancamentos, series]);
