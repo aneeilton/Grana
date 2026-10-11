@@ -248,7 +248,7 @@ export function ContasScreen({
                       >
                         {Number(conta.saldo_corrente) < 0
                           ? `Usando ${formatMoney(Math.min(-Number(conta.saldo_corrente), Number(conta.limite)))} do limite · resta ${formatMoney(Math.max(0, Number(conta.limite) + Number(conta.saldo_corrente)))}`
-                          : `Limite: ${formatMoney(Number(conta.limite))} · disponível ${formatMoney(Number(conta.saldo_corrente) + Number(conta.limite))}`}
+                          : `Limite da conta: ${formatMoney(Number(conta.limite))} (informativo)`}
                       </p>
                     )}
                   </div>
