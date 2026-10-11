@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Landmark, Star, X } from "lucide-react";
+import { Landmark, RefreshCw, Star, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
@@ -30,6 +30,11 @@ export function ContasScreen({
   const [aplicado, setAplicado] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [atualizandoId, setAtualizandoId] = useState<string | null>(null);
+  const [novoCorrente, setNovoCorrente] = useState("");
+  const [novoAplicado, setNovoAplicado] = useState("");
+  const [atualizando, setAtualizando] = useState(false);
+  const [atualizacaoErro, setAtualizacaoErro] = useState<string | null>(null);
 
   const totalCorrente = useMemo(
     () => contas.reduce((sum, c) => sum + Number(c.saldo_corrente), 0),
@@ -106,6 +111,40 @@ export function ContasScreen({
     closeForm();
   }
 
+  // Atualização rápida: só os saldos, direto no card da conta, sem abrir
+  // o formulário completo de edição.
+  function iniciarAtualizacao(conta: Conta) {
+    setAtualizandoId(conta.id);
+    setNovoCorrente(String(conta.saldo_corrente));
+    setNovoAplicado(String(conta.saldo_aplicado));
+    setAtualizacaoErro(null);
+  }
+
+  function fecharAtualizacao() {
+    setAtualizandoId(null);
+    setAtualizacaoErro(null);
+  }
+
+  async function salvarAtualizacao(e: React.FormEvent) {
+    e.preventDefault();
+    if (!atualizandoId) return;
+    setAtualizando(true);
+    setAtualizacaoErro(null);
+    const { data, error } = await supabase
+      .from("contas")
+      .update({
+        saldo_corrente: Number(novoCorrente || 0),
+        saldo_aplicado: Number(novoAplicado || 0),
+      })
+      .eq("id", atualizandoId)
+      .select()
+      .single();
+    setAtualizando(false);
+    if (error || !data) return setAtualizacaoErro(error?.message ?? "Falha ao salvar");
+    setContas((prev) => prev.map((c) => (c.id === atualizandoId ? (data as Conta) : c)));
+    fecharAtualizacao();
+  }
+
   async function removeConta(id: string) {
     setContas((prev) => prev.filter((c) => c.id !== id));
     await supabase.from("contas").delete().eq("id", id);
@@ -170,9 +209,12 @@ export function ContasScreen({
             {contas.map((conta) => (
               <Card
                 key={conta.id}
-                className="flex cursor-pointer items-center justify-between"
-                onClick={() => startEdit(conta)}
+                className={`cursor-pointer ${atualizandoId === conta.id ? "ring-2 ring-brand-400" : ""}`}
+                onClick={() => {
+                  if (atualizandoId !== conta.id) startEdit(conta);
+                }}
               >
+                <div className="flex items-center justify-between">
                 <div className="flex min-w-0 items-center gap-2">
                   <button
                     onClick={(e) => {
@@ -192,9 +234,18 @@ export function ContasScreen({
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <p className="font-extrabold text-brand-700">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (atualizandoId === conta.id) fecharAtualizacao();
+                      else iniciarAtualizacao(conta);
+                    }}
+                    aria-label="Atualizar saldo"
+                    className="flex items-center gap-1 rounded-xl px-1.5 py-0.5 font-extrabold text-brand-700 hover:bg-brand-50"
+                  >
                     {formatMoney(Number(conta.saldo_corrente))}
-                  </p>
+                    <RefreshCw size={13} strokeWidth={2.5} className="opacity-60" />
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -206,6 +257,77 @@ export function ContasScreen({
                     <X size={16} strokeWidth={2.25} />
                   </button>
                 </div>
+                </div>
+
+                {atualizandoId === conta.id && (
+                  <form
+                    onSubmit={salvarAtualizacao}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-3 space-y-2 border-t border-ink-100 pt-3"
+                  >
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink-400">
+                      Atualizar saldo
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="block space-y-1">
+                        <span className="px-1 text-[11px] font-semibold text-ink-500">Em conta</span>
+                        <input
+                          autoFocus
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          value={novoCorrente}
+                          onChange={(e) => setNovoCorrente(e.target.value)}
+                          onFocus={(e) => e.target.select()}
+                          className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+                        />
+                      </label>
+                      <label className="block space-y-1">
+                        <span className="px-1 text-[11px] font-semibold text-ink-500">Aplicado</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          value={novoAplicado}
+                          onChange={(e) => setNovoAplicado(e.target.value)}
+                          onFocus={(e) => e.target.select()}
+                          className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+                        />
+                      </label>
+                    </div>
+                    {(() => {
+                      const diff =
+                        Number(novoCorrente || 0) + Number(novoAplicado || 0) -
+                        Number(conta.saldo_corrente) - Number(conta.saldo_aplicado);
+                      if (Math.abs(diff) < 0.005) return null;
+                      return (
+                        <p className={`px-1 text-[11px] font-semibold ${diff > 0 ? "text-brand-700" : "text-coral-500"}`}>
+                          {diff > 0 ? "+" : "−"}
+                          {formatMoney(Math.abs(diff))} em relação ao saldo anterior
+                        </p>
+                      );
+                    })()}
+                    {atualizacaoErro && (
+                      <p className="text-xs font-medium text-coral-500">Erro: {atualizacaoErro}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={fecharAtualizacao}
+                        className="flex-1 rounded-2xl bg-ink-100 py-2.5 text-sm font-semibold text-ink-700"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={atualizando}
+                        className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                      >
+                        Atualizar
+                      </button>
+                    </div>
+                  </form>
+                )}
               </Card>
             ))}
           </div>
