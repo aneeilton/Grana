@@ -26,7 +26,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { DespesaDiariaCard } from "@/components/screens/DespesaDiariaCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { buildMonthlyProjection, mesCritico, valoresEfetivosPorItem } from "@/lib/projection";
-import { comprasPorCartao, totalComprasNoMes } from "@/lib/cartoes";
+import { comprasPorCartao, rotuloParcela, totalComprasNoMes } from "@/lib/cartoes";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
 import type { Conta, GastoDiario, Item, Lancamento } from "@/lib/types";
 
@@ -157,13 +157,14 @@ export function DashboardScreen({
             dia: i.dia_vencimento,
             valor: (efetivo?.valor ?? 0) + parcelas,
             parcelas,
+            parcela: rotuloParcela(i, lancamentos, competencia),
             pago: efetivo?.pago ?? false,
             inferido: efetivo?.inferido ?? false,
           };
         })
         .filter((v) => v.valor > 0)
         .sort((a, b) => Number(a.pago) - Number(b.pago) || (a.dia ?? 99) - (b.dia ?? 99)),
-    [items, efetivosDoMes, compras]
+    [items, efetivosDoMes, compras, lancamentos, competencia]
   );
 
   async function ajustarSaldoConta(delta: number): Promise<string | null> {
@@ -749,6 +750,11 @@ export function DashboardScreen({
                           <div className="min-w-0">
                             <p className={`truncate text-sm font-semibold ${v.pago ? "text-ink-400" : "text-ink-800"}`}>
                               {v.nome}
+                              {v.parcela && (
+                                <span className="ml-1.5 rounded-full bg-ink-100 px-1.5 py-0.5 text-[10px] font-bold text-ink-500">
+                                  {v.parcela}
+                                </span>
+                              )}
                             </p>
                             {v.dia && <p className="text-xs text-ink-400">Vence dia {v.dia}</p>}
                             {v.parcelas > 0 && (

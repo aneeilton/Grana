@@ -95,6 +95,7 @@ export function MonthlyItemsScreen({
   const [cartao, setCartao] = useState(false);
   const [limite, setLimite] = useState("");
   const [parcelas, setParcelas] = useState("");
+  const [parcelaAtual, setParcelaAtual] = useState("");
   const [cartaoId, setCartaoId] = useState("");
   const [valorCompra, setValorCompra] = useState("");
   const [sazonal, setSazonal] = useState(false);
@@ -176,9 +177,10 @@ export function MonthlyItemsScreen({
           (i.fixo ||
             ocorreNoMes(i, competencia) ||
             (!ehSazonal(i) && i.competencia_unica === competencia) ||
-            lancamentos[i.id] !== undefined)
+            lancamentos[i.id] !== undefined ||
+            (i.parcelas_total != null && rotuloParcela(i, todosLancamentos, competencia) !== null))
       ),
-    [items, competencia, lancamentos]
+    [items, competencia, lancamentos, todosLancamentos]
   );
 
   const cartoesCadastrados = useMemo(() => items.filter((i) => i.cartao), [items]);
@@ -231,6 +233,7 @@ export function MonthlyItemsScreen({
     setCartao(false);
     setLimite("");
     setParcelas("");
+    setParcelaAtual("");
     setCartaoId("");
     setSazonal(false);
     setMesesSazonal([]);
@@ -247,6 +250,7 @@ export function MonthlyItemsScreen({
     setCartao(item.cartao);
     setLimite(item.limite != null ? String(item.limite) : "");
     setParcelas(item.parcelas_total != null ? String(item.parcelas_total) : "");
+    setParcelaAtual(rotuloParcela(item, todosLancamentos, competencia)?.split("/")[0] ?? "");
     setCartaoId(item.cartao_id ?? "");
     setSazonal(ehSazonal(item));
     setMesesSazonal(item.meses_recorrencia ?? []);
@@ -324,11 +328,18 @@ export function MonthlyItemsScreen({
     // Editando um item não-fixo, mantém o mês de início original (senão
     // editar no meio do plano "recomeçava" as parcelas no mês aberto).
     const editando = editingId ? items.find((i) => i.id === editingId) : undefined;
+    // Parcelado já em andamento ("estou na 3ª de 10"): o plano começa
+    // (n - 1) meses antes do mês aberto, pra contagem 3/10, 4/10... bater.
+    const nParcelaAtual = parcelasFinal && parcelaAtual
+      ? Math.min(parcelasFinal, Math.max(1, Math.floor(Number(parcelaAtual))))
+      : null;
     const competenciaUnica = fixoFinal || sazonalFinal
       ? null
-      : editando && !editando.fixo && editando.competencia_unica
-        ? editando.competencia_unica
-        : competencia;
+      : nParcelaAtual
+        ? shiftCompetencia(competencia, -(nParcelaAtual - 1))
+        : editando && !editando.fixo && editando.competencia_unica
+          ? editando.competencia_unica
+          : competencia;
 
     const campos = {
       nome: nome.trim(),
@@ -434,7 +445,9 @@ export function MonthlyItemsScreen({
     // encerrada, nao mexe mais nela).
     if (item.parcelas_total && item.parcelas_total > 1) {
       const porItem = new Map(todosLancamentos.filter((l) => l.item_id === item.id).map((l) => [l.competencia, l]));
-      for (let i = 1; i < item.parcelas_total; i++) {
+      // vai ate o fim do plano (a partir do 1o mes), nao N meses a partir daqui
+      const fimDoPlano = shiftCompetencia(inicioDoPlano(item, todosLancamentos) ?? competencia, item.parcelas_total - 1);
+      for (let i = 1; shiftCompetencia(competencia, i) <= fimDoPlano; i++) {
         const comp = shiftCompetencia(competencia, i);
         const existenteFutura = porItem.get(comp);
         if (existenteFutura?.pago) continue;
@@ -602,7 +615,7 @@ export function MonthlyItemsScreen({
                 )}
                 {item.parcelas_total && (
                   <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold text-ink-500">
-                    {item.parcelas_total}x
+                    {rotuloParcela(item, todosLancamentos, competencia) ?? `${item.parcelas_total}x`}
                   </span>
                 )}
               </div>
@@ -913,6 +926,23 @@ export function MonthlyItemsScreen({
                 onChange={(e) => setParcelas(e.target.value)}
                 className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
               />
+            )}
+            {!cartao && !fixo && !sazonal && parcelas && Number(parcelas) > 1 && (
+              <label className="block space-y-1">
+                <span className="px-1 text-[11px] font-semibold text-ink-500">
+                  Parcela de {monthLabel(competencia)} (deixe 1 se começa agora)
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  max={Number(parcelas)}
+                  inputMode="numeric"
+                  placeholder="1"
+                  value={parcelaAtual}
+                  onChange={(e) => setParcelaAtual(e.target.value)}
+                  className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                />
+              </label>
             )}
             {tipo === "despesa" && !cartao && !fixo && !sazonal && cartoesCadastrados.length > 0 && (
               <div className="space-y-2 rounded-2xl bg-grape-500/5 p-2">

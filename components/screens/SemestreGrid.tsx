@@ -3,10 +3,11 @@
 import { useMemo } from "react";
 import { Card } from "@/components/ui/Card";
 import { valoresEfetivosPorItem, type MonthProjection } from "@/lib/projection";
+import { rotuloParcela } from "@/lib/cartoes";
 import { formatCompact, monthLabel } from "@/lib/format";
 import type { Item, Lancamento } from "@/lib/types";
 
-type Linha = { id: string; nome: string; detalhe?: string; valores: (number | null)[] };
+type Linha = { id: string; nome: string; detalhe?: string; valores: (number | null)[]; parcelas: (string | null)[] };
 
 function detalheDoItem(item: Item, nomeCartao?: string): string | undefined {
   if (nomeCartao) return item.parcelas_total ? `${item.parcelas_total}x · ${nomeCartao}` : nomeCartao;
@@ -45,6 +46,7 @@ export function SemestreGrid({
           nome: item.nome,
           detalhe: detalheDoItem(item, item.cartao_id ? nomes.get(item.cartao_id) : undefined),
           valores: porMes.map((mapa) => mapa.get(item.id)?.valor ?? null),
+          parcelas: series.map((m) => rotuloParcela(item, lancamentos, m.competencia)),
         }))
         .filter((l) => l.valores.some((v) => v))
         .sort((a, b) => {
@@ -69,6 +71,9 @@ export function SemestreGrid({
         {l.valores.map((v, i) => (
           <td key={i} className={`${celula} ${v ? "text-ink-700" : "text-ink-400/50"}`}>
             {v ? formatCompact(v) : "—"}
+            {v && l.parcelas[i] ? (
+              <span className="block text-[9px] font-semibold text-ink-400">{l.parcelas[i]}</span>
+            ) : null}
           </td>
         ))}
       </tr>
