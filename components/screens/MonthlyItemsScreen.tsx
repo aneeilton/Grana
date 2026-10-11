@@ -266,13 +266,13 @@ export function MonthlyItemsScreen({
     const fim = shiftCompetencia(inicio, total - 1);
     const porMes = new Map(doItem.map((l) => [l.competencia, l]));
 
-    const linhas: { id?: string; item_id: string; user_id: string; competencia: string; valor: number; pago: boolean }[] = [];
+    const linhas: { item_id: string; user_id: string; competencia: string; valor: number; pago: boolean }[] = [];
     for (let i = 0; i < total; i++) {
       const comp = shiftCompetencia(inicio, i);
       if (comp < aPartirDe) continue;
       const existente = porMes.get(comp);
       if (existente?.pago) continue;
-      linhas.push({ id: existente?.id, item_id: item.id, user_id: userId, competencia: comp, valor, pago: false });
+      linhas.push({ item_id: item.id, user_id: userId, competencia: comp, valor, pago: false });
     }
 
     const foraDoPlano = doItem.filter((l) => !l.pago && (l.competencia < inicio || l.competencia > fim));
@@ -414,7 +414,6 @@ export function MonthlyItemsScreen({
 
     const existing = lancamentos[item.id];
     const linhas: {
-      id?: string;
       item_id: string;
       user_id: string;
       competencia: string;
@@ -422,7 +421,6 @@ export function MonthlyItemsScreen({
       pago: boolean;
     }[] = [
       {
-        id: existing?.id,
         item_id: item.id,
         user_id: user.id,
         competencia,
@@ -441,7 +439,6 @@ export function MonthlyItemsScreen({
         const existenteFutura = porItem.get(comp);
         if (existenteFutura?.pago) continue;
         linhas.push({
-          id: existenteFutura?.id,
           item_id: item.id,
           user_id: user.id,
           competencia: comp,
