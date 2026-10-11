@@ -179,3 +179,14 @@ export function buildMonthlyProjection({
 
   return Array.from(porCompetencia.values()).sort((a, b) => a.competencia.localeCompare(b.competencia));
 }
+
+/**
+ * Mês mais apertado de uma janela de projeção: o de menor saldo no fim
+ * do mês. Retorna null pra lista vazia.
+ */
+export function mesCritico(series: MonthProjection[]): MonthProjection | null {
+  return series.reduce<MonthProjection | null>(
+    (pior, m) => (pior === null || m.saldoFinal < pior.saldoFinal ? m : pior),
+    null
+  );
+}

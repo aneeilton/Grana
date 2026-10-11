@@ -25,10 +25,12 @@ export function SemestreGrid({
   items,
   lancamentos,
   series,
+  criticoCompetencia,
 }: {
   items: Item[];
   lancamentos: Lancamento[];
   series: MonthProjection[];
+  criticoCompetencia: string | null;
 }) {
   const { receitas, despesas } = useMemo(() => {
     const porMes = series.map((m) => valoresEfetivosPorItem(items, lancamentos, m.competencia));
@@ -110,9 +112,18 @@ export function SemestreGrid({
               {series.map((m) => (
                 <th
                   key={m.competencia}
-                  className={`${celula} text-[11px] font-semibold ${m.isCurrent ? "text-brand-700" : "text-ink-400"}`}
+                  className={`${celula} text-[11px] font-semibold ${
+                    m.competencia === criticoCompetencia
+                      ? "text-coral-500"
+                      : m.isCurrent
+                        ? "text-brand-700"
+                        : "text-ink-400"
+                  }`}
                 >
                   {monthLabel(m.competencia)}
+                  {m.competencia === criticoCompetencia && (
+                    <span className="block text-[9px] font-bold uppercase">menor saldo</span>
+                  )}
                 </th>
               ))}
             </tr>

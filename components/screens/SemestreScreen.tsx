@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { CalendarRange } from "lucide-react";
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CalendarRange, TriangleAlert } from "lucide-react";
 import { TopHeader } from "@/components/TopHeader";
 import { Card } from "@/components/ui/Card";
 import { SemestreGrid } from "@/components/screens/SemestreGrid";
-import { buildMonthlyProjection } from "@/lib/projection";
-import { formatMoney, monthLabel } from "@/lib/format";
+import { buildMonthlyProjection, mesCritico } from "@/lib/projection";
+import { formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
 import type { GastoDiario, Item, Lancamento } from "@/lib/types";
 
 export function SemestreScreen({
@@ -36,6 +36,7 @@ export function SemestreScreen({
 
   const receitaTotal = series.reduce((s, m) => s + m.receitaTotal, 0);
   const despesaTotal = series.reduce((s, m) => s + m.despesaTotal, 0);
+  const critico = mesCritico(series);
   const fechamentoFinal = series[series.length - 1]?.saldoFinal ?? saldoAtual;
 
   const chartData = series.map((s) => ({
@@ -75,6 +76,24 @@ export function SemestreScreen({
           </Card>
         </div>
 
+        {critico && (
+          <Card
+            className={`flex items-start gap-3 ${
+              critico.saldoFinal < 0 ? "bg-coral-500/10 text-coral-500" : "bg-sun-500/10 text-sun-500"
+            }`}
+          >
+            <TriangleAlert size={18} strokeWidth={2.25} className="mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-bold">Mês mais apertado: {monthYearLabel(critico.competencia)}</p>
+              <p className="text-[11px] text-ink-500">
+                {critico.saldoFinal < 0
+                  ? `Fecha no vermelho, com ${formatMoney(critico.saldoFinal)}. É o mês para se planejar primeiro.`
+                  : `Menor saldo previsto do semestre: ${formatMoney(critico.saldoFinal)} no fim do mês.`}
+              </p>
+            </div>
+          </Card>
+        )}
+
         <Card>
           <p className="mb-2 text-sm font-bold text-ink-800">Saldo previsto por mês</p>
           <div className="h-40">
@@ -88,13 +107,25 @@ export function SemestreScreen({
                 />
                 <YAxis hide />
                 <Tooltip formatter={(value: number) => formatMoney(value)} />
-                <Bar dataKey="saldo" radius={[8, 8, 8, 8]} fill="#8E20B6" />
+                <Bar dataKey="saldo" radius={[8, 8, 8, 8]}>
+                  {series.map((s) => (
+                    <Cell
+                      key={s.competencia}
+                      fill={s.competencia === critico?.competencia ? (s.saldoFinal < 0 ? "#E91644" : "#FFD23F") : "#8E20B6"}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
-        <SemestreGrid items={items} lancamentos={lancamentos} series={series} />
+        <SemestreGrid
+          items={items}
+          lancamentos={lancamentos}
+          series={series}
+          criticoCompetencia={critico?.competencia ?? null}
+        />
       </div>
     </div>
   );

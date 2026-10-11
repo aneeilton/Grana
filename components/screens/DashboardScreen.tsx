@@ -18,14 +18,15 @@ import {
   Repeat,
   ShieldCheck,
   TrendingUp,
+  TriangleAlert,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, EmptyState } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { DespesaDiariaCard } from "@/components/screens/DespesaDiariaCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
-import { buildMonthlyProjection, valoresEfetivosPorItem } from "@/lib/projection";
-import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel } from "@/lib/format";
+import { buildMonthlyProjection, mesCritico, valoresEfetivosPorItem } from "@/lib/projection";
+import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
 import type { Conta, GastoDiario, Item, Lancamento } from "@/lib/types";
 
 export function DashboardScreen({
@@ -283,6 +284,14 @@ export function DashboardScreen({
       : reserva.meses >= 3
         ? { bg: "bg-sun-500/10", text: "text-sun-500", label: "Razoável" }
         : { bg: "bg-coral-500/10", text: "text-coral-500", label: "Baixa" };
+
+  const critico = useMemo(() => mesCritico(proximoSemestre), [proximoSemestre]);
+  const criticoTone =
+    critico && critico.saldoFinal < 0
+      ? { bg: "bg-coral-500/10", text: "text-coral-500" }
+      : critico && critico.saldoFinal < reserva.custoMensal
+        ? { bg: "bg-sun-500/10", text: "text-sun-500" }
+        : { bg: "bg-ink-50", text: "text-ink-700" };
 
   // "Sobra hoje" e "saúde financeira" olham sempre para o mês real de hoje,
   // não para o mês selecionado no seletor (que pode ser passado/futuro).
@@ -545,6 +554,25 @@ export function DashboardScreen({
               {resumoSemestre.comprometimento.toFixed(0)}%
             </p>
           </Card>
+          {critico && (
+            <Card className={`mt-2 flex items-start gap-3 ${criticoTone.bg}`}>
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/70 ${criticoTone.text}`}>
+                <TriangleAlert size={17} strokeWidth={2.25} />
+              </span>
+              <div className="min-w-0">
+                <p className={`text-xs font-bold ${criticoTone.text}`}>
+                  Mês mais apertado: {monthYearLabel(critico.competencia)}
+                </p>
+                <p className="text-[11px] text-ink-500">
+                  {critico.saldoFinal < 0
+                    ? `O saldo previsto fica negativo no fim do mês (${fmt(critico.saldoFinal)}). Antecipe uma receita ou corte despesas antes disso.`
+                    : critico.saldoFinal < reserva.custoMensal
+                      ? `Sobram só ${fmt(critico.saldoFinal)} no fim do mês, menos que um mês do seu custo médio. Evite gastos novos até lá.`
+                      : `É o menor saldo previsto do período (${fmt(critico.saldoFinal)} no fim do mês), mas ainda com folga.`}
+                </p>
+              </div>
+            </Card>
+          )}
         </div>
 
         <div>
