@@ -486,7 +486,7 @@ export function DashboardScreen({
             />
             <StatCard
               icon={TrendingUp}
-              label="Crédito"
+              label="Receitas"
               value={fmt(resumoSemestre.receitas)}
               tone="brand"
               compact
@@ -496,7 +496,7 @@ export function DashboardScreen({
             <div>
               <p className={`text-xs font-bold ${comprometimentoTone.text}`}>Comprometimento de renda</p>
               <p className="text-[11px] text-ink-500">
-                (despesas fixas + pontuais) ÷ créditos previstos nos próx. 6 meses
+                (despesas fixas + pontuais) ÷ receitas previstas nos próx. 6 meses
               </p>
             </div>
             <p className={`text-xl font-extrabold [font-variant-numeric:tabular-nums] ${comprometimentoTone.text}`}>

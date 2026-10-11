@@ -5,6 +5,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recha
 import { CalendarRange } from "lucide-react";
 import { TopHeader } from "@/components/TopHeader";
 import { Card } from "@/components/ui/Card";
+import { SemestreGrid } from "@/components/screens/SemestreGrid";
 import { buildMonthlyProjection } from "@/lib/projection";
 import { formatMoney, monthLabel } from "@/lib/format";
 import type { GastoDiario, Item, Lancamento } from "@/lib/types";
@@ -93,30 +94,7 @@ export function SemestreScreen({
           </div>
         </Card>
 
-        <div className="space-y-2">
-          {series.map((mes) => (
-            <Card
-              key={mes.competencia}
-              className={`flex items-center justify-between ${
-                mes.isCurrent ? "ring-2 ring-brand-400" : ""
-              }`}
-            >
-              <div>
-                <p className="text-sm font-semibold capitalize text-ink-800">
-                  {monthLabel(mes.competencia)}
-                </p>
-                <p className="text-xs text-ink-400">
-                  +{formatMoney(mes.receitaTotal)} · −{formatMoney(mes.despesaTotal)}
-                </p>
-              </div>
-              <p
-                className={`font-extrabold ${mes.saldoFinal >= 0 ? "text-ink-800" : "text-coral-500"}`}
-              >
-                {formatMoney(mes.saldoFinal)}
-              </p>
-            </Card>
-          ))}
-        </div>
+        <SemestreGrid items={items} lancamentos={lancamentos} series={series} />
       </div>
     </div>
   );

@@ -41,3 +41,9 @@ export function shiftCompetencia(competencia: string, delta: number): string {
   const date = new Date(year, month - 1 + delta, 1);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
 }
+
+// Valor enxuto (sem "R$" e sem centavos) pra caber em tabelas estreitas,
+// como a grade item × mês do Semestre.
+export function formatCompact(value: number): string {
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(Math.round(value ?? 0));
+}
