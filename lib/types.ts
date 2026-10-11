@@ -4,6 +4,7 @@ export type Conta = {
   nome: string;
   saldo_corrente: number;
   saldo_aplicado: number;
+  limite: number | null; // limite da conta (cheque especial), opcional
   created_at: string;
 };
 

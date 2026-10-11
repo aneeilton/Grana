@@ -28,6 +28,7 @@ export function ContasScreen({
   const [nome, setNome] = useState("");
   const [corrente, setCorrente] = useState("");
   const [aplicado, setAplicado] = useState("");
+  const [limiteConta, setLimiteConta] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [atualizandoId, setAtualizandoId] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export function ContasScreen({
     setNome("");
     setCorrente("");
     setAplicado("");
+    setLimiteConta("");
     setError(null);
   }
 
@@ -64,6 +66,7 @@ export function ContasScreen({
     setNome(conta.nome);
     setCorrente(String(conta.saldo_corrente));
     setAplicado(String(conta.saldo_aplicado));
+    setLimiteConta(conta.limite != null ? String(conta.limite) : "");
     setError(null);
     setOpen(true);
   }
@@ -74,6 +77,12 @@ export function ContasScreen({
     setSaving(true);
     setError(null);
 
+    // Limite (cheque especial) é opcional: só manda a coluna quando há
+    // (ou havia) limite, pra não depender da migração 0012 pro resto.
+    const limiteNovo = limiteConta ? Math.max(0, Number(limiteConta)) : null;
+    const limiteAnterior = editingId ? (contas.find((c) => c.id === editingId)?.limite ?? null) : null;
+    const limiteCampos = limiteNovo !== null || limiteAnterior !== null ? { limite: limiteNovo } : {};
+
     if (editingId) {
       const { data, error } = await supabase
         .from("contas")
@@ -81,6 +90,7 @@ export function ContasScreen({
           nome: nome.trim(),
           saldo_corrente: Number(corrente || 0),
           saldo_aplicado: Number(aplicado || 0),
+          ...limiteCampos,
         })
         .eq("id", editingId)
         .select()
@@ -102,6 +112,7 @@ export function ContasScreen({
         nome: nome.trim(),
         saldo_corrente: Number(corrente || 0),
         saldo_aplicado: Number(aplicado || 0),
+        ...limiteCampos,
       })
       .select()
       .single();
@@ -231,6 +242,15 @@ export function ContasScreen({
                     <p className="text-xs text-ink-400">
                       Aplicado: {formatMoney(Number(conta.saldo_aplicado))}
                     </p>
+                    {conta.limite != null && Number(conta.limite) > 0 && (
+                      <p
+                        className={`text-xs ${Number(conta.saldo_corrente) < 0 ? "font-semibold text-coral-500" : "text-ink-400"}`}
+                      >
+                        {Number(conta.saldo_corrente) < 0
+                          ? `Usando ${formatMoney(Math.min(-Number(conta.saldo_corrente), Number(conta.limite)))} do limite · resta ${formatMoney(Math.max(0, Number(conta.limite) + Number(conta.saldo_corrente)))}`
+                          : `Limite: ${formatMoney(Number(conta.limite))} · disponível ${formatMoney(Number(conta.saldo_corrente) + Number(conta.limite))}`}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
@@ -363,6 +383,19 @@ export function ContasScreen({
                 className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
               />
             </div>
+            <label className="block space-y-1">
+              <span className="px-1 text-[11px] font-semibold text-ink-500">Limite da conta / cheque especial (opcional)</span>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                inputMode="decimal"
+                placeholder="0,00"
+                value={limiteConta}
+                onChange={(e) => setLimiteConta(e.target.value)}
+                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+              />
+            </label>
             {error && <p className="text-xs font-medium text-coral-500">Erro: {error}</p>}
             <div className="flex gap-2 pt-1">
               <button
