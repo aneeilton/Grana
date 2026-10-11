@@ -16,6 +16,7 @@ import {
   PiggyBank,
   Receipt,
   Repeat,
+  ShieldCheck,
   TrendingUp,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -264,6 +265,25 @@ export function DashboardScreen({
         ? { bg: "bg-sun-500/10", text: "text-sun-500" }
         : { bg: "bg-brand-100", text: "text-brand-700" };
 
+  // Reserva em meses de custo: quantos meses o dinheiro disponível hoje
+  // (contas + investido) banca as despesas médias previstas pros próximos
+  // 6 meses, se a renda parasse.
+  const reserva = useMemo(() => {
+    const custoMensal =
+      proximoSemestre.length > 0
+        ? proximoSemestre.reduce((s, m) => s + m.despesaTotal, 0) / proximoSemestre.length
+        : 0;
+    const meses = custoMensal > 0 ? Math.max(0, saldoAtual) / custoMensal : null;
+    return { custoMensal, meses };
+  }, [proximoSemestre, saldoAtual]);
+
+  const reservaTone =
+    reserva.meses === null || reserva.meses >= 6
+      ? { bg: "bg-brand-100", text: "text-brand-700", label: "Confortável" }
+      : reserva.meses >= 3
+        ? { bg: "bg-sun-500/10", text: "text-sun-500", label: "Razoável" }
+        : { bg: "bg-coral-500/10", text: "text-coral-500", label: "Baixa" };
+
   // "Sobra hoje" e "saúde financeira" olham sempre para o mês real de hoje,
   // não para o mês selecionado no seletor (que pode ser passado/futuro).
   const mesAtual = useMemo(() => series.find((s) => s.isCurrent) ?? series[0], [series]);
@@ -379,6 +399,28 @@ export function DashboardScreen({
           <StatCard icon={Gem} label="Bens" value={fmt(totalBens)} tone="sun" />
           <StatCard icon={TrendingUp} label="Patrimônio líquido" value={fmt(patrimonioLiquido)} tone="sky" />
         </div>
+
+        <Card className={`flex items-center justify-between gap-3 ${reservaTone.bg}`}>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/70 ${reservaTone.text}`}>
+              <ShieldCheck size={17} strokeWidth={2.25} />
+            </span>
+            <div className="min-w-0">
+              <p className={`text-sm font-bold ${reservaTone.text}`}>Reserva · {reservaTone.label}</p>
+              <p className="text-[11px] text-ink-500">
+                {reserva.meses === null
+                  ? "Sem despesas previstas para calcular"
+                  : `Contas + investido cobrem o custo médio de ${fmt(reserva.custoMensal)}/mês`}
+              </p>
+            </div>
+          </div>
+          <p className={`shrink-0 text-right font-extrabold [font-variant-numeric:tabular-nums] ${reservaTone.text}`}>
+            <span className="text-xl">
+              {reserva.meses === null ? "—" : oculto ? "••" : reserva.meses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+            </span>
+            <span className="block text-[10px] font-semibold">meses</span>
+          </p>
+        </Card>
 
         <Card>
           <div className="flex items-center justify-between">
