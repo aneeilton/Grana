@@ -8,7 +8,7 @@ import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, shiftCompetencia } from "@/lib/format";
-import { valoresEfetivosPorItem } from "@/lib/projection";
+import { ehSazonal, ocorreNoMes, valoresEfetivosPorItem } from "@/lib/projection";
 import { comprasAVencer, comprasPorCartao, inicioDoPlano, rotuloParcela, totalComprasNoMes } from "@/lib/cartoes";
 import type { Conta, Item, ItemTipo, Lancamento } from "@/lib/types";
 
@@ -35,6 +35,8 @@ function itemIcon(tipo: ItemTipo, fixo: boolean, cartao: boolean) {
   if (cartao) return CreditCard;
   return fixo ? Repeat : Receipt;
 }
+
+const MESES_ANO = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -95,6 +97,8 @@ export function MonthlyItemsScreen({
   const [parcelas, setParcelas] = useState("");
   const [cartaoId, setCartaoId] = useState("");
   const [valorCompra, setValorCompra] = useState("");
+  const [sazonal, setSazonal] = useState(false);
+  const [mesesSazonal, setMesesSazonal] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -169,7 +173,10 @@ export function MonthlyItemsScreen({
       items.filter(
         (i) =>
           !i.cartao_id &&
-          (i.fixo || i.competencia_unica === competencia || lancamentos[i.id] !== undefined)
+          (i.fixo ||
+            ocorreNoMes(i, competencia) ||
+            (!ehSazonal(i) && i.competencia_unica === competencia) ||
+            lancamentos[i.id] !== undefined)
       ),
     [items, competencia, lancamentos]
   );
@@ -192,11 +199,15 @@ export function MonthlyItemsScreen({
     [itemsVisiveis, lancamentos]
   );
   const itemsParcelados = useMemo(
-    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.fixo && i.parcelas_total)),
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.fixo && !ehSazonal(i) && i.parcelas_total)),
+    [itemsVisiveis, lancamentos]
+  );
+  const itemsSazonais = useMemo(
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => ehSazonal(i))),
     [itemsVisiveis, lancamentos]
   );
   const itemsPontuais = useMemo(
-    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.fixo && !i.parcelas_total)),
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.fixo && !ehSazonal(i) && !i.parcelas_total)),
     [itemsVisiveis, lancamentos]
   );
 
@@ -221,6 +232,8 @@ export function MonthlyItemsScreen({
     setLimite("");
     setParcelas("");
     setCartaoId("");
+    setSazonal(false);
+    setMesesSazonal([]);
     setValorCompra("");
     setFormError(null);
   }
@@ -235,6 +248,8 @@ export function MonthlyItemsScreen({
     setLimite(item.limite != null ? String(item.limite) : "");
     setParcelas(item.parcelas_total != null ? String(item.parcelas_total) : "");
     setCartaoId(item.cartao_id ?? "");
+    setSazonal(ehSazonal(item));
+    setMesesSazonal(item.meses_recorrencia ?? []);
     setValorCompra(item.cartao_id ? String(efetivos.get(item.id)?.valor ?? "") : "");
     setFormError(null);
     setOpen(true);
@@ -285,14 +300,19 @@ export function MonthlyItemsScreen({
     // Cartão sempre é fixo: você sempre tem fatura desse cartão, só o
     // valor muda mês a mês.
     const fixoFinal = cartao ? true : fixo;
+    // Anual/sazonal: não é fixo nem parcelado, repete só nos meses marcados.
+    const sazonalFinal = !fixoFinal && sazonal && mesesSazonal.length > 0;
+    if (!fixoFinal && sazonal && mesesSazonal.length === 0) {
+      return setFormError("Escolha pelo menos um mês do ano");
+    }
     // Parcelado: numero de parcelas so faz sentido pra item nao-fixo e
     // nao-cartao. competencia_unica marca o 1o mes do plano; os meses
     // seguintes aparecem via lancamento explicito, espelhado ao salvar o
     // valor (ver gravarPlano e itemsVisiveis).
     const parcelasFinal =
-      !fixoFinal && !cartao && parcelas && Number(parcelas) > 1 ? Number(parcelas) : null;
+      !fixoFinal && !cartao && !sazonalFinal && parcelas && Number(parcelas) > 1 ? Number(parcelas) : null;
     // Compra lançada num cartão: soma na fatura dele em cada mês do plano.
-    const cartaoIdFinal = tipo === "despesa" && !fixoFinal && cartaoId ? cartaoId : null;
+    const cartaoIdFinal = tipo === "despesa" && !fixoFinal && !sazonalFinal && cartaoId ? cartaoId : null;
     const valorCompraFinal = Number(valorCompra || 0);
     if (cartaoIdFinal && !(valorCompraFinal > 0)) {
       return setFormError(parcelasFinal ? "Informe o valor de cada parcela" : "Informe o valor da compra");
@@ -304,7 +324,7 @@ export function MonthlyItemsScreen({
     // Editando um item não-fixo, mantém o mês de início original (senão
     // editar no meio do plano "recomeçava" as parcelas no mês aberto).
     const editando = editingId ? items.find((i) => i.id === editingId) : undefined;
-    const competenciaUnica = fixoFinal
+    const competenciaUnica = fixoFinal || sazonalFinal
       ? null
       : editando && !editando.fixo && editando.competencia_unica
         ? editando.competencia_unica
@@ -322,6 +342,9 @@ export function MonthlyItemsScreen({
       // só manda a coluna quando há (ou havia) cartão ligado -- assim o
       // resto continua salvando mesmo antes da migração 0010 no banco.
       ...(cartaoIdFinal || editando?.cartao_id ? { cartao_id: cartaoIdFinal } : {}),
+      ...(sazonalFinal || editando?.meses_recorrencia?.length
+        ? { meses_recorrencia: sazonalFinal ? [...mesesSazonal].sort((a, b) => a - b) : null }
+        : {}),
     };
 
     const {
@@ -574,6 +597,12 @@ export function MonthlyItemsScreen({
                     Expectativa
                   </span>
                 )}
+                {ehSazonal(item) && (
+                  <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-500">
+                    {item.meses_recorrencia!.length === 1 ? "Anual" : "Sazonal"} ·{" "}
+                    {item.meses_recorrencia!.map((m) => MESES_ANO[m - 1]).join(", ")}
+                  </span>
+                )}
                 {item.parcelas_total && (
                   <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold text-ink-500">
                     {item.parcelas_total}x
@@ -705,7 +734,7 @@ export function MonthlyItemsScreen({
         )}
         {inferido && (
           <p className="mt-1.5 text-[11px] text-ink-400">
-            Repete automaticamente o valor do último mês · só mexa se o valor mudar
+            Repete automaticamente o último valor lançado{ehSazonal(item) ? " (da última vez que ocorreu)" : ""} · só mexa se o valor mudar
           </p>
         )}
         {saveErrors[item.id] && (
@@ -763,6 +792,12 @@ export function MonthlyItemsScreen({
               <div className="space-y-2">
                 <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Parceladas</p>
                 {itemsParcelados.map(renderItem)}
+              </div>
+            )}
+            {itemsSazonais.length > 0 && (
+              <div className="space-y-2">
+                <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Anuais e sazonais</p>
+                {itemsSazonais.map(renderItem)}
               </div>
             )}
             {itemsPontuais.length > 0 && (
@@ -834,6 +869,45 @@ export function MonthlyItemsScreen({
               É {tipo === "receita" ? "uma receita" : "uma despesa"} fixa (repete todo mês)
             </label>
             {!cartao && !fixo && (
+              <label className="flex items-center gap-2 px-1 text-sm text-ink-600">
+                <input
+                  type="checkbox"
+                  checked={sazonal}
+                  onChange={(e) => {
+                    setSazonal(e.target.checked);
+                    if (e.target.checked && mesesSazonal.length === 0) {
+                      setMesesSazonal([Number(competencia.slice(5, 7))]);
+                    }
+                  }}
+                  className="h-4 w-4 rounded accent-brand-600"
+                />
+                Repete só em alguns meses do ano (anual/sazonal)
+              </label>
+            )}
+            {!cartao && !fixo && sazonal && (
+              <div className="grid grid-cols-6 gap-1.5">
+                {MESES_ANO.map((rotulo, idx) => {
+                  const mes = idx + 1;
+                  const on = mesesSazonal.includes(mes);
+                  return (
+                    <button
+                      key={mes}
+                      type="button"
+                      onClick={() =>
+                        setMesesSazonal((prev) => (on ? prev.filter((m) => m !== mes) : [...prev, mes]))
+                      }
+                      aria-pressed={on}
+                      className={`rounded-xl py-2 text-xs font-bold transition ${
+                        on ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-500"
+                      }`}
+                    >
+                      {rotulo}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {!cartao && !fixo && !sazonal && (
               <input
                 type="number"
                 min={2}
@@ -843,7 +917,7 @@ export function MonthlyItemsScreen({
                 className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
               />
             )}
-            {tipo === "despesa" && !cartao && !fixo && cartoesCadastrados.length > 0 && (
+            {tipo === "despesa" && !cartao && !fixo && !sazonal && cartoesCadastrados.length > 0 && (
               <div className="space-y-2 rounded-2xl bg-grape-500/5 p-2">
                 <label className="block space-y-1">
                   <span className="px-1 text-[11px] font-semibold text-ink-500">Vai na fatura de</span>
@@ -878,7 +952,15 @@ export function MonthlyItemsScreen({
                 Cartão é sempre fixo: você sempre tem fatura, só o valor muda todo mês. Compras
                 parceladas nele você lança como despesa nova, escolhendo o cartão em &quot;Vai na fatura de&quot;.
               </p>
-            ) : fixo ? null : cartaoId ? (
+            ) : fixo ? null : sazonal ? (
+              <p className="px-1 text-[11px] text-ink-400">
+                {mesesSazonal.length === 1
+                  ? `Anual: aparece todo ano em ${MESES_ANO[mesesSazonal[0] - 1]}, repetindo o último valor lançado.`
+                  : mesesSazonal.length > 1
+                    ? `Sazonal: aparece em ${[...mesesSazonal].sort((a, b) => a - b).map((m) => MESES_ANO[m - 1]).join(", ")}, repetindo o último valor lançado.`
+                    : "Escolha os meses do ano em que ela acontece."}
+              </p>
+            ) : cartaoId ? (
               <p className="px-1 text-[11px] text-ink-400">
                 {parcelas && Number(parcelas) > 1
                   ? `Soma na fatura do ${cartoesCadastrados.find((c) => c.id === cartaoId)?.nome ?? "cartão"} por ${Number(parcelas)} meses`

@@ -41,6 +41,7 @@ export type Item = {
   limite: number | null;
   parcelas_total: number | null;
   cartao_id: string | null; // compra feita nesse cartão (soma na fatura dele)
+  meses_recorrencia: number[] | null; // anual/sazonal: meses do ano (1-12) em que o item ocorre
   created_at: string;
 };
 

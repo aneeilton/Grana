@@ -17,6 +17,16 @@ export type MonthProjection = {
 
 export type ValorEfetivo = { valor: number; pago: boolean; inferido: boolean };
 
+/** Item anual/sazonal: repete só nos meses do ano em meses_recorrencia. */
+export function ehSazonal(item: Item): boolean {
+  return !item.fixo && !!item.meses_recorrencia?.length;
+}
+
+/** O item sazonal ocorre no mês dessa competência? */
+export function ocorreNoMes(item: Item, competencia: string): boolean {
+  return ehSazonal(item) && item.meses_recorrencia!.includes(Number(competencia.slice(5, 7)));
+}
+
 /**
  * Agrupa os lancamentos de cada item em ordem cronologica -- base para
  * "puxar" o valor de um item fixo pra frente (ver lancamentoEfetivo).
@@ -51,7 +61,10 @@ function lancamentoEfetivo(
   if (!listaDoItem?.length) return null;
   const exato = listaDoItem.find((l) => l.competencia === competencia);
   if (exato) return { valor: Number(exato.valor), pago: exato.pago, inferido: false };
-  if (!item.fixo) return null;
+  // Anual/sazonal: só "puxa" o último valor nos meses do ano em que ocorre.
+  if (ehSazonal(item)) {
+    if (!item.meses_recorrencia!.includes(Number(competencia.slice(5, 7)))) return null;
+  } else if (!item.fixo) return null;
   let anterior: Lancamento | null = null;
   for (const l of listaDoItem) {
     if (l.competencia < competencia) anterior = l;
