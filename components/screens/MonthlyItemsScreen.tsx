@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
 import { MonthSelector } from "@/components/ui/MonthSelector";
-import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, shiftCompetencia } from "@/lib/format";
+import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel, shiftCompetencia } from "@/lib/format";
 import { ehSazonal, ocorreNoMes, valoresEfetivosPorItem } from "@/lib/projection";
 import { comprasPorCartao, inicioDoPlano, rotuloParcela, saldoDevedorCartao, totalComprasNoMes } from "@/lib/cartoes";
 import type { Conta, Item, ItemTipo, Lancamento } from "@/lib/types";
@@ -212,6 +212,24 @@ export function MonthlyItemsScreen({
     () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.fixo && !ehSazonal(i) && !i.parcelas_total)),
     [itemsVisiveis, lancamentos]
   );
+
+  // Resumo do mês selecionado (card colorido no topo): cada item com o
+  // valor do mês -- cartão já somando as compras/parcelas da fatura --
+  // e quanto já foi pago/recebido.
+  const resumoMes = useMemo(() => {
+    const linhas = itemsVisiveis
+      .map((i) => ({
+        id: i.id,
+        nome: i.nome,
+        valor: (efetivos.get(i.id)?.valor ?? 0) + (i.cartao ? totalComprasNoMes(compras.get(i.id), efetivos) : 0),
+        feito: lancamentos[i.id]?.pago ?? false,
+      }))
+      .filter((l) => l.valor > 0)
+      .sort((a, b) => b.valor - a.valor);
+    const feito = linhas.filter((l) => l.feito).reduce((s, l) => s + l.valor, 0);
+    const total = linhas.reduce((s, l) => s + l.valor, 0);
+    return { linhas, feito, total };
+  }, [itemsVisiveis, efetivos, compras, lancamentos]);
 
   function isDirty(item: Item) {
     // Compara contra o valor VIGENTE (real ou herdado do ultimo mes), nao
@@ -759,11 +777,7 @@ export function MonthlyItemsScreen({
 
   return (
     <div>
-      {hideHeader ? (
-        <p className="px-4 pb-2 text-sm text-ink-500">
-          Total em {monthLabel(competencia)} · <span className="font-bold text-ink-800">{formatMoney(total)}</span>
-        </p>
-      ) : (
+      {!hideHeader && (
         <TopHeader
           icon={icon}
           title={title}
@@ -773,6 +787,54 @@ export function MonthlyItemsScreen({
 
       <div className="space-y-4 px-4 pt-1">
         <MonthSelector competencia={competencia} onChange={setCompetencia} minCompetencia={MES_INICIAL} />
+
+        {resumoMes.linhas.length > 0 && (
+          <Card
+            className={`bg-gradient-to-br text-white ${
+              tipo === "receita" ? "from-brand-600 to-brand-900" : "from-coral-500 to-[#7A0B24]"
+            }`}
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
+              {tipo === "receita" ? "Receitas" : "Despesas"} de {monthYearLabel(competencia)}
+            </p>
+            <p className="mt-1 text-3xl font-extrabold [font-variant-numeric:tabular-nums]">{formatMoney(resumoMes.total)}</p>
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/20">
+              <div
+                className="h-full rounded-full bg-white/80"
+                style={{ width: `${resumoMes.total > 0 ? Math.min(100, (resumoMes.feito / resumoMes.total) * 100) : 0}%` }}
+              />
+            </div>
+            <p className="mt-2 text-sm font-semibold text-white/90">
+              {formatMoney(resumoMes.feito)} {valueDoneLabel.toLowerCase()}s ·{" "}
+              {resumoMes.total > 0 ? Math.round((resumoMes.feito / resumoMes.total) * 100) : 0}% · falta {formatMoney(resumoMes.total - resumoMes.feito)}
+            </p>
+
+            <div className="mt-4 border-t border-white/15 pt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
+                Por {tipo === "receita" ? "receita" : "despesa"} no mês
+              </p>
+              <div className="mt-1.5 space-y-1.5">
+                {resumoMes.linhas.map((l) => (
+                  <div key={l.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className={`flex min-w-0 items-center gap-1.5 ${l.feito ? "text-white/60" : "text-white/90"}`}>
+                      {l.feito && <Check size={13} strokeWidth={2.5} className="shrink-0" />}
+                      <span className="truncate">{l.nome}</span>
+                    </span>
+                    <span
+                      className={`shrink-0 font-bold [font-variant-numeric:tabular-nums] ${l.feito ? "text-white/60" : ""}`}
+                    >
+                      {formatMoney(l.valor)}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between gap-3 border-t border-white/15 pt-1.5 text-sm">
+                  <span className="font-semibold text-white/80">Total do mês</span>
+                  <span className="shrink-0 font-extrabold [font-variant-numeric:tabular-nums]">{formatMoney(resumoMes.total)}</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {!contaPadraoId && (
           <p className="px-1 text-[11px] text-ink-400">
