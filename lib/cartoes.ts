@@ -46,3 +46,26 @@ export function rotuloParcela(item: Item, lancamentos: Lancamento[], competencia
   if (n < 1 || n > item.parcelas_total) return null;
   return `${n}/${item.parcelas_total}`;
 }
+
+/**
+ * Saldo devedor total de um cartão, sem olhar mês selecionado: todos os
+ * lançamentos em aberto (não pagos) do cartão e das compras/parcelas
+ * ligadas a ele, de qualquer mês -- passados não quitados, o atual e os
+ * futuros já lançados. Se o mês atual ainda não tem fatura lançada mas o
+ * cartão repete o valor do último mês, esse valor previsto também entra
+ * (só o do mês atual, pra não somar uma fatura "infinita" pra frente).
+ */
+export function saldoDevedorCartao(
+  cartao: Item,
+  compras: Item[] | undefined,
+  lancamentos: Lancamento[],
+  competenciaHoje: string,
+  efetivoHoje: ValorEfetivo | undefined
+): number {
+  const ids = new Set([cartao.id, ...(compras ?? []).map((c) => c.id)]);
+  const emAberto = lancamentos
+    .filter((l) => ids.has(l.item_id) && !l.pago)
+    .reduce((s, l) => s + Number(l.valor), 0);
+  const previstoHoje = efetivoHoje?.inferido && !efetivoHoje.pago ? efetivoHoje.valor : 0;
+  return emAberto + previstoHoje;
+}

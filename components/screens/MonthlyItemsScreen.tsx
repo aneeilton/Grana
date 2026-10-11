@@ -9,7 +9,7 @@ import { Card, EmptyState } from "@/components/ui/Card";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, shiftCompetencia } from "@/lib/format";
 import { ehSazonal, ocorreNoMes, valoresEfetivosPorItem } from "@/lib/projection";
-import { comprasAVencer, comprasPorCartao, inicioDoPlano, rotuloParcela, totalComprasNoMes } from "@/lib/cartoes";
+import { comprasPorCartao, inicioDoPlano, rotuloParcela, saldoDevedorCartao, totalComprasNoMes } from "@/lib/cartoes";
 import type { Conta, Item, ItemTipo, Lancamento } from "@/lib/types";
 
 type Tone = "brand" | "sky" | "sun" | "coral" | "grape";
@@ -575,16 +575,16 @@ export function MonthlyItemsScreen({
     const state = saveState[item.id] ?? "idle";
     const ItemIcon = itemIcon(tipo, item.fixo, item.cartao);
     const inferido = !lanc && efetivos.get(item.id)?.inferido;
-    // Limite usado = fatura de hoje (gastos avulsos + parcelas do mês) +
-    // parcelas futuras ainda não pagas, que seguem prendendo o limite.
+    // Limite usado = saldo devedor total do cartão (tudo em aberto, de
+    // qualquer mês, inclusive parcelas e faturas futuras) -- igual à aba Cartões.
     const comprasDoCartao = item.cartao ? (compras.get(item.id) ?? []) : [];
     const comprasNoMes = comprasDoCartao
       .map((c) => ({ compra: c, valor: efetivos.get(c.id)?.valor ?? 0 }))
       .filter((c) => c.valor > 0);
     const totalComprasMes = totalComprasNoMes(comprasDoCartao, efetivos);
-    const valorFaturaAtual =
-      (efetivosHoje.get(item.id)?.pago ? 0 : (efetivosHoje.get(item.id)?.valor ?? 0)) +
-      comprasAVencer(comprasDoCartao, todosLancamentos, competenciaHoje);
+    const valorFaturaAtual = item.cartao
+      ? saldoDevedorCartao(item, comprasDoCartao, todosLancamentos, competenciaHoje, efetivosHoje.get(item.id))
+      : 0;
     const uso = item.cartao && item.limite ? Math.min(1, valorFaturaAtual / item.limite) : null;
     const usoCor =
       uso === null ? "" : uso >= 0.9 ? "bg-coral-500" : uso >= 0.7 ? "bg-sun-500" : "bg-brand-600";

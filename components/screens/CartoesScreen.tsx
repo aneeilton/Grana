@@ -5,7 +5,7 @@ import { CreditCard } from "lucide-react";
 import { Card, EmptyState } from "@/components/ui/Card";
 import { currentCompetencia, formatMoney } from "@/lib/format";
 import { valoresEfetivosPorItem } from "@/lib/projection";
-import { comprasAVencer, comprasPorCartao, totalComprasNoMes } from "@/lib/cartoes";
+import { comprasPorCartao, saldoDevedorCartao } from "@/lib/cartoes";
 import type { Item, Lancamento } from "@/lib/types";
 
 function usoCor(pct: number) {
@@ -28,16 +28,12 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
     () =>
       cartoes
         .map((c) => {
-          // Fatura do mês = gastos avulsos + parcelas deste mês. Limite usado
-          // soma também as parcelas futuras ainda não pagas.
-          const avulsos = efetivos.get(c.id)?.valor ?? 0;
-          const valor = avulsos + totalComprasNoMes(compras.get(c.id), efetivos);
-          // fatura já paga libera o limite e não é mais dívida
-          const avulsosEmAberto = efetivos.get(c.id)?.pago ? 0 : avulsos;
-          const usado = avulsosEmAberto + comprasAVencer(compras.get(c.id), lancamentos, competencia);
+          // Saldo devedor total (todos os meses em aberto, inclusive parcelas
+          // e faturas futuras) -- essa aba não tem seletor de mês.
+          const usado = saldoDevedorCartao(c, compras.get(c.id), lancamentos, competencia, efetivos.get(c.id));
           const limite = c.limite ?? 0;
           const pct = limite > 0 ? Math.min(1, usado / limite) : 0;
-          return { ...c, valor, usado, pct };
+          return { ...c, usado, pct };
         })
         .sort((a, b) => b.pct - a.pct),
     [cartoes, efetivos, compras, lancamentos, competencia]
@@ -75,7 +71,7 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
             futuras não pagas (o mesmo "usado" do limite de cada cartão). */}
         <div className="mt-4 border-t border-white/15 pt-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-            Saldo devedor por cartão
+            Saldo devedor por cartão (inclui parcelas futuras)
           </p>
           <div className="mt-1.5 space-y-1.5">
             {[...linhas]
@@ -110,7 +106,7 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-ink-800">{c.nome}</p>
                   <p className="text-xs text-ink-400">
-                    {formatMoney(c.usado)} de {formatMoney(c.limite ?? 0)} · fatura do mês {formatMoney(c.valor)}
+                    {formatMoney(c.usado)} de {formatMoney(c.limite ?? 0)}
                   </p>
                 </div>
               </div>
