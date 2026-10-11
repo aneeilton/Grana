@@ -297,6 +297,42 @@ export function DashboardScreen({
     return { fixas, pontuais, receitas, comprometimento };
   }, [proximoSemestre]);
 
+  // Indicadores próprios, fora do genérico "despesa fixa", sobre a
+  // receita prevista dos próximos 6 meses:
+  // - peso dos cartões: faturas (gastos avulsos + compras/parcelas nelas)
+  // - comprometido com parcelas: tudo que é parcelado (no cartão ou não)
+  const pesoCartoesDividas = useMemo(() => {
+    let cartoes = 0;
+    let parcelas = 0;
+    for (const m of proximoSemestre) {
+      const efetivos = valoresEfetivosPorItem(items, lancamentos, m.competencia);
+      for (const i of items) {
+        if (i.tipo !== "despesa") continue;
+        const valor = efetivos.get(i.id)?.valor ?? 0;
+        if (i.cartao || i.cartao_id) cartoes += valor;
+        if (i.parcelas_total) parcelas += valor;
+      }
+    }
+    const receitas = resumoSemestre.receitas;
+    const receitaMensal = proximoSemestre.length ? receitas / proximoSemestre.length : 0;
+    return {
+      cartoesPct: receitas > 0 ? (cartoes / receitas) * 100 : 0,
+      cartoesMes: proximoSemestre.length ? cartoes / proximoSemestre.length : 0,
+      parcelasPct: receitas > 0 ? (parcelas / receitas) * 100 : 0,
+      parcelasMes: proximoSemestre.length ? parcelas / proximoSemestre.length : 0,
+      // saldo devedor cadastrado em Dívidas, em meses de receita
+      dividasEmMeses: receitaMensal > 0 ? totalDividas / receitaMensal : null,
+    };
+  }, [proximoSemestre, items, lancamentos, resumoSemestre.receitas, totalDividas]);
+
+  function tomPct(pct: number, atencao: number, critico: number) {
+    return pct >= critico
+      ? "bg-coral-500/10 text-coral-500"
+      : pct >= atencao
+        ? "bg-sun-500/10 text-sun-500"
+        : "bg-brand-50 text-brand-700";
+  }
+
   const comprometimentoTone =
     resumoSemestre.comprometimento >= 80
       ? { bg: "bg-coral-500/10", text: "text-coral-500" }
@@ -592,6 +628,38 @@ export function DashboardScreen({
               {resumoSemestre.comprometimento.toFixed(0)}%
             </p>
           </Card>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className={`rounded-2xl p-3 ${tomPct(pesoCartoesDividas.cartoesPct, 30, 50)}`}>
+              <div className="flex items-center gap-1.5">
+                <CreditCard size={14} strokeWidth={2} />
+                <span className="text-[10px] font-semibold uppercase tracking-wide opacity-80">Peso dos cartões</span>
+              </div>
+              <p className="mt-1 text-xl font-extrabold [font-variant-numeric:tabular-nums]">
+                {pesoCartoesDividas.cartoesPct.toFixed(0)}%
+              </p>
+              <p className="text-[10px] text-ink-500">da receita · {fmt(pesoCartoesDividas.cartoesMes)}/mês</p>
+            </div>
+            <div className={`rounded-2xl p-3 ${tomPct(pesoCartoesDividas.parcelasPct, 15, 30)}`}>
+              <div className="flex items-center gap-1.5">
+                <FileWarning size={14} strokeWidth={2} />
+                <span className="text-[10px] font-semibold uppercase tracking-wide opacity-80">Em parcelas</span>
+              </div>
+              <p className="mt-1 text-xl font-extrabold [font-variant-numeric:tabular-nums]">
+                {pesoCartoesDividas.parcelasPct.toFixed(0)}%
+              </p>
+              <p className="text-[10px] text-ink-500">da receita · {fmt(pesoCartoesDividas.parcelasMes)}/mês</p>
+            </div>
+          </div>
+          {totalDividas > 0 && pesoCartoesDividas.dividasEmMeses !== null && (
+            <p className="mt-1.5 px-1 text-[11px] text-ink-500">
+              Dívidas cadastradas ({fmt(totalDividas)}) equivalem a{" "}
+              <span className="font-bold text-ink-700">
+                {oculto ? "••" : pesoCartoesDividas.dividasEmMeses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}{" "}
+                meses
+              </span>{" "}
+              da sua receita média.
+            </p>
+          )}
           {critico && (
             <Card className={`mt-2 flex items-start gap-3 ${criticoTone.bg}`}>
               <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/70 ${criticoTone.text}`}>
