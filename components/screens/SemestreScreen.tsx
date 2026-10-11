@@ -6,6 +6,7 @@ import { CalendarRange, TriangleAlert } from "lucide-react";
 import { TopHeader } from "@/components/TopHeader";
 import { Card } from "@/components/ui/Card";
 import { SemestreGrid } from "@/components/screens/SemestreGrid";
+import { SimuladorCard } from "@/components/screens/SimuladorCard";
 import { buildMonthlyProjection, mesCritico } from "@/lib/projection";
 import { formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
 import type { GastoDiario, Item, Lancamento } from "@/lib/types";
@@ -119,6 +120,8 @@ export function SemestreScreen({
             </ResponsiveContainer>
           </div>
         </Card>
+
+        <SimuladorCard items={items} lancamentos={lancamentos} series={series} />
 
         <SemestreGrid
           items={items}
