@@ -26,6 +26,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { DespesaDiariaCard } from "@/components/screens/DespesaDiariaCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { buildMonthlyProjection, mesCritico, valoresEfetivosPorItem } from "@/lib/projection";
+import { comprasPorCartao, totalComprasNoMes } from "@/lib/cartoes";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
 import type { Conta, GastoDiario, Item, Lancamento } from "@/lib/types";
 
@@ -137,26 +138,32 @@ export function DashboardScreen({
     [items, efetivosDoMes]
   );
 
+  const compras = useMemo(() => comprasPorCartao(items), [items]);
+
+  // Compras lançadas num cartão não aparecem soltas: o valor delas soma
+  // na linha da fatura do cartão.
   const despesasDoMes = useMemo(
     () =>
       items
-        .filter((i) => i.tipo === "despesa")
+        .filter((i) => i.tipo === "despesa" && !i.cartao_id)
         .map((i) => {
           const efetivo = efetivosDoMes.get(i.id);
+          const parcelas = i.cartao ? totalComprasNoMes(compras.get(i.id), efetivosDoMes) : 0;
           return {
             id: i.id,
             nome: i.nome,
             fixo: i.fixo,
             cartao: i.cartao,
             dia: i.dia_vencimento,
-            valor: efetivo?.valor ?? 0,
+            valor: (efetivo?.valor ?? 0) + parcelas,
+            parcelas,
             pago: efetivo?.pago ?? false,
             inferido: efetivo?.inferido ?? false,
           };
         })
         .filter((v) => v.valor > 0)
         .sort((a, b) => Number(a.pago) - Number(b.pago) || (a.dia ?? 99) - (b.dia ?? 99)),
-    [items, efetivosDoMes]
+    [items, efetivosDoMes, compras]
   );
 
   async function ajustarSaldoConta(delta: number): Promise<string | null> {
@@ -214,22 +221,53 @@ export function DashboardScreen({
       .select()
       .single();
 
-    setTogglingId(null);
     if (error || !data) {
+      setTogglingId(null);
       setToggleErrors((prev) => ({ ...prev, [itemId]: error?.message ?? "Falha ao salvar" }));
       return;
     }
+    const salvos: Lancamento[] = [data as Lancamento];
+
+    // Fatura de cartão: as compras/parcelas do mês acompanham o pago da
+    // fatura, e o valor delas também sai (ou volta) da conta padrão.
+    let valorTotal = valor;
+    if (itemsById.get(itemId)?.cartao) {
+      const doMes = (compras.get(itemId) ?? [])
+        .map((c) => lancamentos.find((l) => l.item_id === c.id && l.competencia === competencia))
+        .filter((l): l is Lancamento => l !== undefined && l.pago !== novoPago);
+      if (doMes.length) {
+        const { data: atualizadas, error: comprasError } = await supabase
+          .from("lancamentos")
+          .update({ pago: novoPago })
+          .in(
+            "id",
+            doMes.map((l) => l.id)
+          )
+          .select();
+        if (comprasError || !atualizadas) {
+          setToggleErrors((prev) => ({
+            ...prev,
+            [itemId]: `Fatura salva, mas as parcelas não: ${comprasError?.message ?? "falha ao salvar"}`,
+          }));
+        } else {
+          salvos.push(...(atualizadas as Lancamento[]));
+          valorTotal += doMes.reduce((s, l) => s + Number(l.valor), 0);
+        }
+      }
+    }
+
+    setTogglingId(null);
     setLancamentos((prev) => {
-      const found = prev.some((l) => l.id === (data as Lancamento).id);
-      return found
-        ? prev.map((l) => (l.id === (data as Lancamento).id ? (data as Lancamento) : l))
-        : [...prev, data as Lancamento];
+      const porId = new Map(salvos.map((l) => [l.id, l]));
+      const atualizados = prev.map((l) => porId.get(l.id) ?? l);
+      const novos = salvos.filter((s) => !prev.some((l) => l.id === s.id));
+      return [...atualizados, ...novos];
     });
 
     const tipo = itemsById.get(itemId)?.tipo;
-    if (tipo && valor > 0) {
+    if (tipo && valorTotal > 0) {
       const sinal = tipo === "receita" ? 1 : -1;
-      const saldoError = await ajustarSaldoConta(novoPago ? sinal * valor : -sinal * valor);
+      const saldoError = await ajustarSaldoConta(novoPago ? sinal * valorTotal : -sinal * valorTotal);
       if (saldoError) {
         setToggleErrors((prev) => ({
           ...prev,
@@ -645,6 +683,9 @@ export function DashboardScreen({
                               {v.nome}
                             </p>
                             {v.dia && <p className="text-xs text-ink-400">Vence dia {v.dia}</p>}
+                            {v.parcelas > 0 && (
+                              <p className="text-[10px] text-ink-400">inclui {fmt(v.parcelas)} em parcelas</p>
+                            )}
                             {v.inferido && (
                               <p className="text-[10px] text-ink-400">Previsto (repete o último mês)</p>
                             )}

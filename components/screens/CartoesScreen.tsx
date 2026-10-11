@@ -5,6 +5,7 @@ import { CreditCard } from "lucide-react";
 import { Card, EmptyState } from "@/components/ui/Card";
 import { currentCompetencia, formatMoney } from "@/lib/format";
 import { valoresEfetivosPorItem } from "@/lib/projection";
+import { comprasAVencer, comprasPorCartao, totalComprasNoMes } from "@/lib/cartoes";
 import type { Item, Lancamento } from "@/lib/types";
 
 function usoCor(pct: number) {
@@ -17,26 +18,31 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
   // Sempre o mes atual de verdade -- essa tela e um resumo geral, nao um
   // extrato navegavel por competencia.
   const competencia = useMemo(() => currentCompetencia(), []);
+  const compras = useMemo(() => comprasPorCartao(items), [items]);
   const efetivos = useMemo(
-    () => valoresEfetivosPorItem(cartoes, lancamentos, competencia),
-    [cartoes, lancamentos, competencia]
+    () => valoresEfetivosPorItem(items, lancamentos, competencia),
+    [items, lancamentos, competencia]
   );
 
   const linhas = useMemo(
     () =>
       cartoes
         .map((c) => {
-          const valor = efetivos.get(c.id)?.valor ?? 0;
+          // Fatura do mês = gastos avulsos + parcelas deste mês. Limite usado
+          // soma também as parcelas futuras ainda não pagas.
+          const avulsos = efetivos.get(c.id)?.valor ?? 0;
+          const valor = avulsos + totalComprasNoMes(compras.get(c.id), efetivos);
+          const usado = avulsos + comprasAVencer(compras.get(c.id), lancamentos, competencia);
           const limite = c.limite ?? 0;
-          const pct = limite > 0 ? Math.min(1, valor / limite) : 0;
-          return { ...c, valor, pct };
+          const pct = limite > 0 ? Math.min(1, usado / limite) : 0;
+          return { ...c, valor, usado, pct };
         })
         .sort((a, b) => b.pct - a.pct),
-    [cartoes, efetivos]
+    [cartoes, efetivos, compras, lancamentos, competencia]
   );
 
   const limiteGeral = useMemo(() => linhas.reduce((s, c) => s + (c.limite ?? 0), 0), [linhas]);
-  const usadoGeral = useMemo(() => linhas.reduce((s, c) => s + c.valor, 0), [linhas]);
+  const usadoGeral = useMemo(() => linhas.reduce((s, c) => s + c.usado, 0), [linhas]);
   const pctGeral = limiteGeral > 0 ? Math.min(1, usadoGeral / limiteGeral) : 0;
 
   if (cartoes.length === 0) {
@@ -76,7 +82,7 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-ink-800">{c.nome}</p>
                   <p className="text-xs text-ink-400">
-                    {formatMoney(c.valor)} de {formatMoney(c.limite ?? 0)}
+                    {formatMoney(c.usado)} de {formatMoney(c.limite ?? 0)} · fatura do mês {formatMoney(c.valor)}
                   </p>
                 </div>
               </div>

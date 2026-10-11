@@ -47,3 +47,10 @@ export function shiftCompetencia(competencia: string, delta: number): string {
 export function formatCompact(value: number): string {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(Math.round(value ?? 0));
 }
+
+// Diferença em meses entre duas competências ("YYYY-MM-01"): b - a.
+export function monthsBetween(a: string, b: string): number {
+  const [ya, ma] = a.split("-").map(Number);
+  const [yb, mb] = b.split("-").map(Number);
+  return (yb - ya) * 12 + (mb - ma);
+}

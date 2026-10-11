@@ -8,7 +8,8 @@ import type { Item, Lancamento } from "@/lib/types";
 
 type Linha = { id: string; nome: string; detalhe?: string; valores: (number | null)[] };
 
-function detalheDoItem(item: Item): string | undefined {
+function detalheDoItem(item: Item, nomeCartao?: string): string | undefined {
+  if (nomeCartao) return item.parcelas_total ? `${item.parcelas_total}x · ${nomeCartao}` : nomeCartao;
   if (item.cartao) return "cartão";
   if (item.parcelas_total) return `${item.parcelas_total}x`;
   if (!item.fixo) return "pontual";
@@ -33,6 +34,7 @@ export function SemestreGrid({
   criticoCompetencia: string | null;
 }) {
   const { receitas, despesas } = useMemo(() => {
+    const nomes = new Map(items.map((i) => [i.id, i.nome]));
     const porMes = series.map((m) => valoresEfetivosPorItem(items, lancamentos, m.competencia));
     const linhas = (tipo: Item["tipo"]): Linha[] =>
       items
@@ -40,7 +42,7 @@ export function SemestreGrid({
         .map((item) => ({
           id: item.id,
           nome: item.nome,
-          detalhe: detalheDoItem(item),
+          detalhe: detalheDoItem(item, item.cartao_id ? nomes.get(item.cartao_id) : undefined),
           valores: porMes.map((mapa) => mapa.get(item.id)?.valor ?? null),
         }))
         .filter((l) => l.valores.some((v) => v))

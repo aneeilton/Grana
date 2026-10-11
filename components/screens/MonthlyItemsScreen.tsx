@@ -9,6 +9,7 @@ import { Card, EmptyState } from "@/components/ui/Card";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, shiftCompetencia } from "@/lib/format";
 import { valoresEfetivosPorItem } from "@/lib/projection";
+import { comprasAVencer, comprasPorCartao, inicioDoPlano, rotuloParcela, totalComprasNoMes } from "@/lib/cartoes";
 import type { Conta, Item, ItemTipo, Lancamento } from "@/lib/types";
 
 type Tone = "brand" | "sky" | "sun" | "coral" | "grape";
@@ -92,6 +93,8 @@ export function MonthlyItemsScreen({
   const [cartao, setCartao] = useState(false);
   const [limite, setLimite] = useState("");
   const [parcelas, setParcelas] = useState("");
+  const [cartaoId, setCartaoId] = useState("");
+  const [valorCompra, setValorCompra] = useState("");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -159,13 +162,20 @@ export function MonthlyItemsScreen({
   // propria de lancamento nos meses do seu plano -- nao cai em "fixo"
   // (nao repete pra sempre) nem em "competencia_unica" (nao e so 1 mes),
   // entao precisa aparecer quando ha lancamento explicito pra esse mes.
+  // Compras lançadas num cartão nao aparecem soltas na lista: entram
+  // dentro do card do cartao, somando na fatura (ver renderItem).
   const itemsVisiveis = useMemo(
     () =>
       items.filter(
-        (i) => i.fixo || i.competencia_unica === competencia || lancamentos[i.id] !== undefined
+        (i) =>
+          !i.cartao_id &&
+          (i.fixo || i.competencia_unica === competencia || lancamentos[i.id] !== undefined)
       ),
     [items, competencia, lancamentos]
   );
+
+  const cartoesCadastrados = useMemo(() => items.filter((i) => i.cartao), [items]);
+  const compras = useMemo(() => comprasPorCartao(items), [items]);
 
   function ordenarPorPendente(lista: Item[]) {
     return [...lista].sort(
@@ -210,6 +220,8 @@ export function MonthlyItemsScreen({
     setCartao(false);
     setLimite("");
     setParcelas("");
+    setCartaoId("");
+    setValorCompra("");
     setFormError(null);
   }
 
@@ -222,79 +234,132 @@ export function MonthlyItemsScreen({
     setCartao(item.cartao);
     setLimite(item.limite != null ? String(item.limite) : "");
     setParcelas(item.parcelas_total != null ? String(item.parcelas_total) : "");
+    setCartaoId(item.cartao_id ?? "");
+    setValorCompra(item.cartao_id ? String(efetivos.get(item.id)?.valor ?? "") : "");
     setFormError(null);
     setOpen(true);
+  }
+
+  // Grava o valor de um item parcelado (ou compra no cartão) em cada mês
+  // do plano, do mês `aPartirDe` em diante -- pulando parcelas já pagas
+  // -- e apaga lançamentos pendentes que ficaram fora do plano (ex: o
+  // número de parcelas diminuiu). Retorna a mensagem de erro, se houver.
+  async function gravarPlano(item: Item, valor: number, aPartirDe: string, userId: string): Promise<string | null> {
+    const doItem = todosLancamentos.filter((l) => l.item_id === item.id);
+    const inicio = inicioDoPlano(item, doItem) ?? aPartirDe;
+    const total = item.parcelas_total ?? 1;
+    const fim = shiftCompetencia(inicio, total - 1);
+    const porMes = new Map(doItem.map((l) => [l.competencia, l]));
+
+    const linhas: { id?: string; item_id: string; user_id: string; competencia: string; valor: number; pago: boolean }[] = [];
+    for (let i = 0; i < total; i++) {
+      const comp = shiftCompetencia(inicio, i);
+      if (comp < aPartirDe) continue;
+      const existente = porMes.get(comp);
+      if (existente?.pago) continue;
+      linhas.push({ id: existente?.id, item_id: item.id, user_id: userId, competencia: comp, valor, pago: false });
+    }
+
+    const foraDoPlano = doItem.filter((l) => !l.pago && (l.competencia < inicio || l.competencia > fim));
+    if (foraDoPlano.length) {
+      const ids = foraDoPlano.map((l) => l.id);
+      const { error } = await supabase.from("lancamentos").delete().in("id", ids);
+      if (error) return error.message;
+      setTodosLancamentos((prev) => prev.filter((l) => !ids.includes(l.id)));
+    }
+
+    if (!linhas.length) return null;
+    const { data, error } = await supabase
+      .from("lancamentos")
+      .upsert(linhas, { onConflict: "item_id,competencia" })
+      .select();
+    if (error || !data) return error?.message ?? "Falha ao salvar as parcelas";
+    for (const linha of data as Lancamento[]) upsertLocal(linha);
+    return null;
   }
 
   async function submitItem(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) return;
-    setSaving(true);
-    setFormError(null);
 
     // Cartão sempre é fixo: você sempre tem fatura desse cartão, só o
     // valor muda mês a mês.
     const fixoFinal = cartao ? true : fixo;
     // Parcelado: numero de parcelas so faz sentido pra item nao-fixo e
-    // nao-cartao. competencia_unica continua apontando pro mes de
-    // criacao (garante que o item apareca pra lancar o 1o valor); os
-    // meses seguintes do plano aparecem via lancamento explicito, que
-    // vai sendo espelhado automaticamente ao salvar (ver saveValor e
-    // itemsVisiveis).
+    // nao-cartao. competencia_unica marca o 1o mes do plano; os meses
+    // seguintes aparecem via lancamento explicito, espelhado ao salvar o
+    // valor (ver gravarPlano e itemsVisiveis).
     const parcelasFinal =
       !fixoFinal && !cartao && parcelas && Number(parcelas) > 1 ? Number(parcelas) : null;
-
-    if (editingId) {
-      const { data, error } = await supabase
-        .from("items")
-        .update({
-          nome: nome.trim(),
-          dia_vencimento: showDia && dia ? Number(dia) : null,
-          expectativa: showExpectativa ? expectativa : false,
-          fixo: fixoFinal,
-          competencia_unica: fixoFinal ? null : competencia,
-          cartao: tipo === "despesa" ? cartao : false,
-          limite: tipo === "despesa" && cartao && limite ? Number(limite) : null,
-          parcelas_total: parcelasFinal,
-        })
-        .eq("id", editingId)
-        .select()
-        .single();
-      setSaving(false);
-      if (error) return setFormError(error.message);
-      setItems((prev) => prev.map((i) => (i.id === editingId ? (data as Item) : i)));
-      closeForm();
-      return;
+    // Compra lançada num cartão: soma na fatura dele em cada mês do plano.
+    const cartaoIdFinal = tipo === "despesa" && !fixoFinal && cartaoId ? cartaoId : null;
+    const valorCompraFinal = Number(valorCompra || 0);
+    if (cartaoIdFinal && !(valorCompraFinal > 0)) {
+      return setFormError(parcelasFinal ? "Informe o valor de cada parcela" : "Informe o valor da compra");
     }
+
+    setSaving(true);
+    setFormError(null);
+
+    // Editando um item não-fixo, mantém o mês de início original (senão
+    // editar no meio do plano "recomeçava" as parcelas no mês aberto).
+    const editando = editingId ? items.find((i) => i.id === editingId) : undefined;
+    const competenciaUnica = fixoFinal
+      ? null
+      : editando && !editando.fixo && editando.competencia_unica
+        ? editando.competencia_unica
+        : competencia;
+
+    const campos = {
+      nome: nome.trim(),
+      dia_vencimento: showDia && dia ? Number(dia) : null,
+      expectativa: showExpectativa ? expectativa : false,
+      fixo: fixoFinal,
+      competencia_unica: competenciaUnica,
+      cartao: tipo === "despesa" ? cartao : false,
+      limite: tipo === "despesa" && cartao && limite ? Number(limite) : null,
+      parcelas_total: parcelasFinal,
+      // só manda a coluna quando há (ou havia) cartão ligado -- assim o
+      // resto continua salvando mesmo antes da migração 0010 no banco.
+      ...(cartaoIdFinal || editando?.cartao_id ? { cartao_id: cartaoIdFinal } : {}),
+    };
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    const { data, error } = await supabase
-      .from("items")
-      .insert({
-        user_id: user!.id,
-        tipo,
-        nome: nome.trim(),
-        dia_vencimento: showDia && dia ? Number(dia) : null,
-        expectativa: showExpectativa ? expectativa : false,
-        fixo: fixoFinal,
-        competencia_unica: fixoFinal ? null : competencia,
-        cartao: tipo === "despesa" ? cartao : false,
-        limite: tipo === "despesa" && cartao && limite ? Number(limite) : null,
-        parcelas_total: parcelasFinal,
-      })
-      .select()
-      .single();
+    if (!user) {
+      setSaving(false);
+      return setFormError("Sessão não encontrada");
+    }
+
+    const { data, error } = editingId
+      ? await supabase.from("items").update(campos).eq("id", editingId).select().single()
+      : await supabase.from("items").insert({ ...campos, user_id: user.id, tipo }).select().single();
+    if (error || !data) {
+      setSaving(false);
+      return setFormError(error?.message ?? "Falha ao salvar");
+    }
+    const salvo = data as Item;
+    setItems((prev) => (editingId ? prev.map((i) => (i.id === editingId ? salvo : i)) : [...prev, salvo]));
+
+    if (cartaoIdFinal) {
+      const inicio = competenciaUnica ?? competencia;
+      const planoErro = await gravarPlano(salvo, valorCompraFinal, competencia > inicio ? competencia : inicio, user.id);
+      if (planoErro) {
+        setSaving(false);
+        return setFormError(`Item salvo, mas as parcelas não: ${planoErro}`);
+      }
+    }
+
     setSaving(false);
-    if (error) return setFormError(error.message);
-    setItems((prev) => [...prev, data as Item]);
     closeForm();
   }
 
   async function removeItem(id: string) {
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    setTodosLancamentos((prev) => prev.filter((l) => l.item_id !== id));
+    // Apagar um cartão apaga junto as compras ligadas a ele (cascade no banco).
+    const removidos = new Set([id, ...(compras.get(id) ?? []).map((c) => c.id)]);
+    setItems((prev) => prev.filter((i) => !removidos.has(i.id)));
+    setTodosLancamentos((prev) => prev.filter((l) => !removidos.has(l.item_id)));
     await supabase.from("items").delete().eq("id", id);
   }
 
@@ -431,9 +496,37 @@ export function MonthlyItemsScreen({
     upsertLocal(data as Lancamento);
     setDrafts((prev) => ({ ...prev, [item.id]: String((data as Lancamento).valor) }));
 
-    if (valor > 0) {
+    // Fatura de cartão: as compras/parcelas do mês acompanham o pago da
+    // fatura, e o valor delas também sai (ou volta) da conta padrão.
+    let valorTotal = valor;
+    if (item.cartao) {
+      const doMes = (compras.get(item.id) ?? [])
+        .map((c) => lancamentos[c.id])
+        .filter((l): l is Lancamento => l !== undefined && l.pago !== novoPago);
+      if (doMes.length) {
+        const { data: atualizadas, error: comprasError } = await supabase
+          .from("lancamentos")
+          .update({ pago: novoPago })
+          .in(
+            "id",
+            doMes.map((l) => l.id)
+          )
+          .select();
+        if (comprasError || !atualizadas) {
+          setSaveErrors((prev) => ({
+            ...prev,
+            [item.id]: `Fatura salva, mas as parcelas não: ${comprasError?.message ?? "falha ao salvar"}`,
+          }));
+        } else {
+          for (const l of atualizadas as Lancamento[]) upsertLocal(l);
+          valorTotal += doMes.reduce((s, l) => s + Number(l.valor), 0);
+        }
+      }
+    }
+
+    if (valorTotal > 0) {
       const sinal = tipo === "receita" ? 1 : -1;
-      const saldoError = await ajustarSaldoConta(novoPago ? sinal * valor : -sinal * valor);
+      const saldoError = await ajustarSaldoConta(novoPago ? sinal * valorTotal : -sinal * valorTotal);
       if (saldoError) {
         setSaveErrors((prev) => ({
           ...prev,
@@ -449,7 +542,15 @@ export function MonthlyItemsScreen({
     const state = saveState[item.id] ?? "idle";
     const ItemIcon = itemIcon(tipo, item.fixo, item.cartao);
     const inferido = !lanc && efetivos.get(item.id)?.inferido;
-    const valorFaturaAtual = efetivosHoje.get(item.id)?.valor ?? 0;
+    // Limite usado = fatura de hoje (gastos avulsos + parcelas do mês) +
+    // parcelas futuras ainda não pagas, que seguem prendendo o limite.
+    const comprasDoCartao = item.cartao ? (compras.get(item.id) ?? []) : [];
+    const comprasNoMes = comprasDoCartao
+      .map((c) => ({ compra: c, valor: efetivos.get(c.id)?.valor ?? 0 }))
+      .filter((c) => c.valor > 0);
+    const totalComprasMes = totalComprasNoMes(comprasDoCartao, efetivos);
+    const valorFaturaAtual =
+      (efetivosHoje.get(item.id)?.valor ?? 0) + comprasAVencer(comprasDoCartao, todosLancamentos, competenciaHoje);
     const uso = item.cartao && item.limite ? Math.min(1, valorFaturaAtual / item.limite) : null;
     const usoCor =
       uso === null ? "" : uso >= 0.9 ? "bg-coral-500" : uso >= 0.7 ? "bg-sun-500" : "bg-brand-600";
@@ -505,7 +606,7 @@ export function MonthlyItemsScreen({
             step="0.01"
             inputMode="decimal"
             value={drafts[item.id] ?? ""}
-            placeholder="0,00"
+            placeholder={comprasDoCartao.length > 0 ? "Outros gastos do cartão" : "0,00"}
             onChange={(e) =>
               setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))
             }
@@ -547,7 +648,59 @@ export function MonthlyItemsScreen({
             </div>
             <p className="mt-1 text-[11px] text-ink-400">
               {Math.round(uso * 100)}% do limite ({formatMoney(item.limite ?? 0)})
+              {comprasDoCartao.length > 0 && " · inclui parcelas a vencer"}
             </p>
+          </div>
+        )}
+        {comprasNoMes.length > 0 && (
+          <div className="mt-3 space-y-1.5 border-t border-ink-100 pt-2.5">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-ink-400">
+              Parcelas e compras nesta fatura
+            </p>
+            {comprasNoMes.map(({ compra, valor }) => {
+              const parcela = rotuloParcela(compra, todosLancamentos, competencia);
+              return (
+                <div key={compra.id} className="flex items-center justify-between gap-2 text-sm">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <p className={`truncate font-semibold ${lancamentos[compra.id]?.pago ? "text-ink-400" : "text-ink-700"}`}>
+                      {compra.nome}
+                    </p>
+                    {parcela && (
+                      <span className="shrink-0 rounded-full bg-ink-100 px-1.5 py-0.5 text-[10px] font-bold text-ink-500">
+                        {parcela}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className={`font-bold [font-variant-numeric:tabular-nums] ${tones.value}`}>
+                      {formatMoney(valor)}
+                    </span>
+                    <button
+                      onClick={() => startEdit(compra)}
+                      className="text-ink-400 hover:text-brand-600"
+                      aria-label={`Editar ${compra.nome}`}
+                    >
+                      <Pencil size={13} strokeWidth={2.25} />
+                    </button>
+                    <button
+                      onClick={() => removeItem(compra.id)}
+                      className="text-ink-400 hover:text-coral-500"
+                      aria-label={`Remover ${compra.nome}`}
+                    >
+                      <X size={14} strokeWidth={2.25} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="flex items-center justify-between border-t border-dashed border-ink-100 pt-1.5 text-xs">
+              <span className="text-ink-500">
+                Fatura prevista (outros gastos + {formatMoney(totalComprasMes)} em parcelas)
+              </span>
+              <span className="font-extrabold text-ink-800 [font-variant-numeric:tabular-nums]">
+                {formatMoney(Number(drafts[item.id] || 0) + totalComprasMes)}
+              </span>
+            </div>
           </div>
         )}
         {inferido && (
@@ -690,11 +843,49 @@ export function MonthlyItemsScreen({
                 className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
               />
             )}
+            {tipo === "despesa" && !cartao && !fixo && cartoesCadastrados.length > 0 && (
+              <div className="space-y-2 rounded-2xl bg-grape-500/5 p-2">
+                <label className="block space-y-1">
+                  <span className="px-1 text-[11px] font-semibold text-ink-500">Vai na fatura de</span>
+                  <select
+                    value={cartaoId}
+                    onChange={(e) => setCartaoId(e.target.value)}
+                    className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                  >
+                    <option value="">Nenhum cartão (boleto, pix, débito)</option>
+                    {cartoesCadastrados.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {cartaoId && (
+                  <input
+                    type="number"
+                    step="0.01"
+                    inputMode="decimal"
+                    placeholder={parcelas && Number(parcelas) > 1 ? "Valor de cada parcela" : "Valor da compra"}
+                    value={valorCompra}
+                    onChange={(e) => setValorCompra(e.target.value)}
+                    className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                  />
+                )}
+              </div>
+            )}
             {cartao ? (
               <p className="px-1 text-[11px] text-ink-400">
-                Cartão é sempre fixo: você sempre tem fatura, só o valor muda todo mês.
+                Cartão é sempre fixo: você sempre tem fatura, só o valor muda todo mês. Compras
+                parceladas nele você lança como despesa nova, escolhendo o cartão em &quot;Vai na fatura de&quot;.
               </p>
-            ) : fixo ? null : parcelas && Number(parcelas) > 1 ? (
+            ) : fixo ? null : cartaoId ? (
+              <p className="px-1 text-[11px] text-ink-400">
+                {parcelas && Number(parcelas) > 1
+                  ? `Soma na fatura do ${cartoesCadastrados.find((c) => c.id === cartaoId)?.nome ?? "cartão"} por ${Number(parcelas)} meses`
+                  : `Soma na fatura do ${cartoesCadastrados.find((c) => c.id === cartaoId)?.nome ?? "cartão"} só neste mês`}
+                {valorCompra && Number(valorCompra) > 0 ? ` (${formatMoney(Number(valorCompra))} por mês)` : ""}.
+              </p>
+            ) : parcelas && Number(parcelas) > 1 ? (
               <p className="px-1 text-[11px] text-ink-400">
                 Ao salvar o valor, ele se repete automaticamente pelas próximas {Number(parcelas) - 1} mês(es).
               </p>
