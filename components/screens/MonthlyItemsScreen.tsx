@@ -583,7 +583,8 @@ export function MonthlyItemsScreen({
       .filter((c) => c.valor > 0);
     const totalComprasMes = totalComprasNoMes(comprasDoCartao, efetivos);
     const valorFaturaAtual =
-      (efetivosHoje.get(item.id)?.valor ?? 0) + comprasAVencer(comprasDoCartao, todosLancamentos, competenciaHoje);
+      (efetivosHoje.get(item.id)?.pago ? 0 : (efetivosHoje.get(item.id)?.valor ?? 0)) +
+      comprasAVencer(comprasDoCartao, todosLancamentos, competenciaHoje);
     const uso = item.cartao && item.limite ? Math.min(1, valorFaturaAtual / item.limite) : null;
     const usoCor =
       uso === null ? "" : uso >= 0.9 ? "bg-coral-500" : uso >= 0.7 ? "bg-sun-500" : "bg-brand-600";
