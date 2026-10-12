@@ -10,9 +10,9 @@
     "import-backup": "tsx scripts/import-backup.ts"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.7",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
-    "lucide-react": "^1.45.0",
     "next": "14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

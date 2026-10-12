@@ -1,12 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Sora } from "next/font/google";
 import "./globals.css";
-
-const sans = Sora({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "Grana+ | Finanças pessoais",
@@ -18,7 +11,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#F6F8F7",
+  themeColor: "#F2F2F7",
   viewportFit: "cover",
 };
 
@@ -28,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={sans.variable}>
+    <html lang="pt-BR">
       <body className="min-h-dvh bg-ink-50 font-sans">
         <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-ink-50 shadow-2xl sm:my-4 sm:min-h-[calc(100dvh-2rem)] sm:rounded-3xl">
           {children}

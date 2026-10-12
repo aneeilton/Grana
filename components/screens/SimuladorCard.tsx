@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FlaskConical, RotateCcw } from "lucide-react";
+import { FlaskConical, RotateCcw } from "@/components/ui/icons";
 import { Card } from "@/components/ui/Card";
 import { mesCritico, valoresEfetivosPorItem, type MonthProjection } from "@/lib/projection";
 import { formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
@@ -95,8 +95,8 @@ export function SimuladorCard({
     <Card>
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-grape-500/10 text-grape-500">
-            <FlaskConical size={17} strokeWidth={2.25} />
+          <span className="app-icon bg-grape-400">
+            <FlaskConical size={18} weight="fill" aria-hidden />
           </span>
           <div>
             <p className="text-[17px] font-semibold text-ink-900">E se…?</p>

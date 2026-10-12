@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "@/components/ui/icons";
 import { TopHeader } from "@/components/TopHeader";
 import { Card } from "@/components/ui/Card";
 import { AccountSyncCard } from "@/components/screens/AccountSyncCard";
@@ -39,7 +39,7 @@ export function MaisScreen({
           <p className="text-[13px] font-semibold text-ink-500">
             ID desta sessão
           </p>
-          <p className="mt-1 break-all font-mono text-[13px] text-ink-800 selection:bg-brand-200">{userId ?? "—"}</p>
+          <p className="mt-1 break-all font-mono text-[13px] text-ink-800 selection:bg-accent-100">{userId ?? "—"}</p>
           <p className="caption mt-1">
             Compare com a coluna "user_id" no Supabase se os dados não estiverem aparecendo — se
             for diferente, os dados foram importados para outra conta.

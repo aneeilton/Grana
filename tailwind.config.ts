@@ -5,89 +5,108 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Paleta "Aurora" -- baseada na paleta de marca fornecida (Indigo,
-        // Watermelon, Golden Pollen, Turquoise, Jungle Green). Cada cor
-        // mantém o hue exato do swatch original num stop "de identidade"
-        // (o mais claro/vívido, usado em ícones, bordas e fundos), e usa um
-        // tom mais escuro da MESMA família em stops que carregam texto ou
-        // fundo sólido com texto branco em cima -- os tons originais do
-        // swatch, sozinhos, não passam em contraste AA para essas funções.
+        // Cores do sistema iOS (modo claro). Cada família tem um tom de
+        // preenchimento (o "system color" da Apple, usado em fundos, ícones e
+        // barras) e um tom de texto mais escuro que passa em contraste AA
+        // sobre branco -- o mesmo par que a Apple usa no modo de alto
+        // contraste. Os nomes das famílias continuam os do app (brand =
+        // verde/positivo, coral = vermelho, sun = laranja/pendente, grape =
+        // roxo, sky = turquesa/consórcio).
+
+        // interação (botões, links, aba ativa, seleção): systemBlue
+        accent: {
+          DEFAULT: "#007AFF",
+          50: "#EEF5FF",
+          100: "#DCEBFF",
+          600: "#0066D6",
+          700: "#0059BA",
+        },
+        // positivo / entrada / feito: systemGreen
         brand: {
-          50: "#F0FAF5",
-          100: "#DBF5EA",
-          200: "#ABEDD0",
-          300: "#6CEAB3",
-          400: "#30E898",
-          500: "#0EAD69", // Jungle Green (swatch exato)
-          600: "#0F8753", // botões/links -- AA c/ texto branco
-          700: "#0D7749", // texto sobre fundo claro -- AA
-          800: "#0F5738",
-          900: "#0C3B27",
+          50: "#EBF9EE",
+          100: "#D9F4DF",
+          200: "#B3E9C0",
+          300: "#7DD991",
+          400: "#4CD964",
+          500: "#34C759",
+          600: "#248A3D", // preenchimento com texto branco (AA)
+          700: "#1F7A36", // texto
+          800: "#196A2D",
+          900: "#124F21",
         },
-        // alerta/despesa: Watermelon
+        // saída / dívida / perigo: systemRed
         coral: {
-          50: "#FFF1F4",
-          100: "#FFE0E7",
-          400: "#F07590", // decorativo (bordas, ícones)
-          500: "#E91644", // texto/fundo -- AA
-          600: "#C9123B", // início de gradiente de despesas
-          900: "#5C0A1D", // fim escuro de gradiente
+          50: "#FFF1F0",
+          100: "#FFE3E1",
+          400: "#FF3B30",
+          500: "#D70015", // texto e preenchimento com texto branco (AA)
+          600: "#C40012",
+          900: "#8A000D",
         },
-        // pendências: Golden Pollen
+        // pendente / atenção: systemOrange
         sun: {
-          100: "#FFF6D6",
-          400: "#FFD23F", // decorativo (swatch exato)
-          500: "#917108", // texto -- AA (o amarelo puro não passa em contraste)
+          100: "#FFF1DE",
+          400: "#FF9500",
+          500: "#B25000", // texto (AA)
         },
-        // investimentos: Indigo
+        // cartões e projeção: systemPurple
         grape: {
-          100: "#F3E6FA",
-          400: "#C874E7", // decorativo
-          500: "#540D6E", // swatch exato -- já tem ótimo contraste como texto
-          600: "#8E20B6", // tom médio p/ gráficos (barras, etc.)
-          900: "#290836", // fim escuro de gradiente
+          100: "#F5EBFB",
+          400: "#AF52DE",
+          500: "#8944AB", // texto (AA)
+          600: "#8944AB",
+          900: "#5E2D77",
         },
-        // contas/informativo: Turquoise
+        // consórcio / informativo: systemTeal
         sky: {
-          100: "#DDF6EF",
-          400: "#3BCEAC", // decorativo (swatch exato)
-          500: "#1C856C", // texto -- AA (o turquesa puro não passa em contraste)
-          600: "#167060", // início de gradiente de consórcio
-          900: "#0B3B30", // fim escuro de gradiente
+          100: "#E0F5F8",
+          400: "#30B0C7",
+          500: "#0071A4", // texto (AA)
+          600: "#0071A4",
+          900: "#004E72",
         },
-        // neutro com leve tom esverdeado (não é slate azulado padrão)
+        // cinzas do sistema: fundo agrupado, separadores e rótulos
         ink: {
-          50: "#F6F8F7",
-          100: "#EBEFED",
-          200: "#DCE3E0", // separadores/bordas de campo
-          400: "#687773", // legendas -- 4.7:1 sobre branco (o antigo #8B9995 ficava em ~3:1)
-          500: "#5F706C",
-          700: "#33413E",
-          800: "#202B29",
-          900: "#121917",
+          50: "#F2F2F7", // systemGroupedBackground
+          100: "#E9E9EE", // preenchimento de controles / separador claro
+          200: "#D1D1D6", // systemGray4 -- bordas de campo
+          400: "#6E6E73", // rótulo secundário (4.9:1 sobre branco)
+          500: "#5E5E62",
+          700: "#3A3A3C",
+          800: "#1C1C1E",
+          900: "#000000", // label
         },
       },
       fontFamily: {
+        // Fonte do sistema: SF Pro no iPhone/Mac, Segoe UI no Windows,
+        // Roboto no Android -- o app usa a fonte nativa de cada aparelho.
         sans: [
-          "var(--font-sans)",
-          "system-ui",
           "-apple-system",
-          "Segoe UI",
+          "BlinkMacSystemFont",
+          '"SF Pro Text"',
+          '"SF Pro Display"',
+          "system-ui",
+          '"Segoe UI"',
           "Roboto",
+          '"Helvetica Neue"',
+          "Arial",
           "sans-serif",
         ],
       },
       borderRadius: {
-        // 3xl = cards (20px); 2xl = blocos internos (16px); xl = controles (12px)
+        // 3xl = cards e listas agrupadas (20px); 2xl = blocos internos
+        // (16px); xl = campos (12px); botões são cápsulas (rounded-full)
         "3xl": "1.25rem",
       },
       boxShadow: {
-        // superfície: sombra curta + difusa, com deslocamento (não halo)
-        card: "0 1px 1px rgba(18, 25, 23, 0.04), 0 6px 18px -10px rgba(18, 25, 23, 0.14)",
-        // cards de resumo coloridos: um pouco mais de profundidade
-        hero: "0 2px 4px -2px rgba(18, 25, 23, 0.18), 0 14px 30px -14px rgba(18, 25, 23, 0.45)",
-        // barra de abas flutuante
-        bar: "0 -1px 0 rgba(18, 25, 23, 0.06), 0 -8px 24px -16px rgba(18, 25, 23, 0.25)",
+        // superfícies do iOS são planas sobre o fundo cinza agrupado; só um
+        // contorno finíssimo pra não sumir em telas muito claras
+        card: "0 0 0 0.5px rgba(0, 0, 0, 0.04)",
+        hero: "none",
+        // barra de abas: só o separador de cima (hairline)
+        bar: "0 -0.5px 0 rgba(0, 0, 0, 0.18)",
+        // segmento selecionado do controle segmentado
+        segment: "0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04)",
       },
       transitionTimingFunction: {
         "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",

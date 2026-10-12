@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Landmark, FileWarning, Gem } from "lucide-react";
+import { Landmark, FileWarning, Gem } from "@/components/ui/icons";
 import { TopHeader } from "@/components/TopHeader";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { Segmented } from "@/components/ui/Segmented";

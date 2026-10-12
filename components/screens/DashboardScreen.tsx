@@ -20,7 +20,7 @@ import {
   TrendingUp,
   TriangleAlert,
   Wallet,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
@@ -440,7 +440,7 @@ export function DashboardScreen({
     <div>
       <header className="flex items-end justify-between gap-3 px-5 pb-3 pt-7">
         <div className="min-w-0">
-          <h1 className="text-[30px] font-bold leading-tight tracking-tight text-ink-900">{saudacao}</h1>
+          <h1 className="text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink-900">{saudacao}</h1>
           <p className="mt-0.5 text-[15px] text-ink-500">Seu resumo de {monthLabel(competencia).toLowerCase()}</p>
         </div>
         <button
@@ -489,7 +489,7 @@ export function DashboardScreen({
           <SectionHeader
             title="Patrimônio"
             action={
-              <Link href="/patrimonio" className="-my-2 -mr-2 inline-flex min-h-11 items-center rounded-xl px-2 text-[15px] font-semibold text-brand-700 transition hover:bg-brand-50">
+              <Link href="/patrimonio" className="-my-2 -mr-2 inline-flex min-h-11 items-center rounded-xl px-2 text-[15px] font-normal text-accent transition hover:bg-accent-50">
                 Abrir
               </Link>
             }
@@ -502,8 +502,8 @@ export function DashboardScreen({
           </div>
           <Card className="mt-3 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${reservaTone.bg} ${reservaTone.text}`}>
-                <ShieldCheck size={18} strokeWidth={2.25} aria-hidden />
+              <span className="app-icon bg-sky-400">
+                <ShieldCheck size={18} weight="fill" aria-hidden />
               </span>
               <div className="min-w-0">
                 <p className="text-[15px] font-semibold text-ink-900">
@@ -534,8 +534,8 @@ export function DashboardScreen({
           <Card>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${notaTone.bg} ${notaTone.text}`}>
-                  <Activity size={18} strokeWidth={2.25} aria-hidden />
+                <span className="app-icon bg-coral-400">
+                  <Activity size={18} weight="bold" aria-hidden />
                 </span>
                 <p className={`text-[17px] font-semibold ${notaTone.text}`}>{notaTone.label}</p>
               </div>
@@ -607,7 +607,7 @@ export function DashboardScreen({
           <SectionHeader
             title="Próximos 6 meses"
             action={
-              <Link href="/semestre" className="-my-2 -mr-2 inline-flex min-h-11 items-center rounded-xl px-2 text-[15px] font-semibold text-brand-700 transition hover:bg-brand-50">
+              <Link href="/semestre" className="-my-2 -mr-2 inline-flex min-h-11 items-center rounded-xl px-2 text-[15px] font-normal text-accent transition hover:bg-accent-50">
                 Semestre
               </Link>
             }
@@ -696,7 +696,7 @@ export function DashboardScreen({
           {!contaPadraoId && (
             <p className="caption mb-2 px-1">
               Defina uma conta padrão em{" "}
-              <Link href="/patrimonio" className="font-semibold text-brand-700 underline underline-offset-2">
+              <Link href="/patrimonio" className="font-medium text-accent">
                 Patrimônio
               </Link>{" "}
               para que marcar como pago/recebido atualize o saldo automaticamente.
@@ -718,8 +718,8 @@ export function DashboardScreen({
                       {receitasDoMes.map((r) => (
                         <li key={r.id} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
                           <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
-                              <TrendingUp size={17} strokeWidth={2} aria-hidden />
+                            <span className="app-icon bg-brand-500">
+                              <TrendingUp size={18} weight="bold" aria-hidden />
                             </span>
                             <div className="min-w-0">
                               <p
@@ -770,11 +770,11 @@ export function DashboardScreen({
                           <li key={v.id} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
                             <div className="flex min-w-0 items-center gap-3">
                               <span
-                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                                  v.cartao ? "bg-grape-100 text-grape-500" : "bg-coral-100 text-coral-500"
+                                className={`app-icon ${
+                                  v.cartao ? "bg-grape-400" : v.fixo ? "bg-sun-400" : "bg-coral-400"
                                 }`}
                               >
-                                <VencIcon size={17} strokeWidth={2} aria-hidden />
+                                <VencIcon size={18} weight="fill" aria-hidden />
                               </span>
                               <div className="min-w-0">
                                 <p

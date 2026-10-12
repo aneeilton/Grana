@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { CalendarRange, TriangleAlert } from "lucide-react";
+import { CalendarRange, TriangleAlert } from "@/components/ui/icons";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, SectionHeader } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
@@ -103,7 +103,7 @@ export function SemestreScreen({
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: "#5F706C", fontFamily: "var(--font-sans)" }}
+                    tick={{ fontSize: 12, fill: "#6E6E73", fontFamily: "inherit" }}
                   />
                   <YAxis hide />
                   <Tooltip
@@ -113,7 +113,7 @@ export function SemestreScreen({
                       borderRadius: 12,
                       border: "none",
                       boxShadow: "0 6px 18px -10px rgba(18,25,23,0.3)",
-                      fontFamily: "var(--font-sans)",
+                      fontFamily: "inherit",
                       fontSize: 13,
                     }}
                   />
@@ -124,9 +124,9 @@ export function SemestreScreen({
                         fill={
                           s.competencia === critico?.competencia
                             ? s.saldoFinal < 0
-                              ? "#E91644"
-                              : "#E8B500"
-                            : "#8E20B6"
+                              ? "#FF3B30"
+                              : "#FF9500"
+                            : "#AF52DE"
                         }
                       />
                     ))}
@@ -138,7 +138,7 @@ export function SemestreScreen({
               <p className="caption mt-2 flex items-center gap-1.5">
                 <span
                   aria-hidden
-                  className={`h-2 w-2 rounded-full ${critico.saldoFinal < 0 ? "bg-coral-500" : "bg-[#E8B500]"}`}
+                  className={`h-2 w-2 rounded-full ${critico.saldoFinal < 0 ? "bg-coral-500" : "bg-sun-400"}`}
                 />
                 Mês mais apertado em destaque
               </p>

@@ -8,7 +8,7 @@ import {
   PawPrint,
   Receipt,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 
 export const CATEGORIAS_GASTO = [
   { id: "mercado", label: "Mercado", icon: ShoppingCart },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { Card, SectionHeader } from "@/components/ui/Card";
 import { CATEGORIAS_GASTO, categoriaIcon, categoriaLabel } from "@/lib/categoriasGasto";

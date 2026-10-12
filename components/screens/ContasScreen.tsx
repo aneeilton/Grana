@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Landmark, RefreshCw, Star, Trash2 } from "lucide-react";
+import { Landmark, RefreshCw, Star, Trash2 } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
@@ -264,7 +264,7 @@ export function ContasScreen({
                       else iniciarAtualizacao(conta);
                     }}
                     aria-label="Atualizar saldo"
-                    className="flex min-h-11 items-center gap-1.5 rounded-xl px-2.5 text-[15px] font-semibold text-brand-700 transition hover:bg-brand-50 active:scale-95"
+                    className="flex min-h-11 items-center gap-1.5 rounded-xl px-2.5 text-[15px] font-normal text-accent transition hover:bg-accent-50 active:scale-95"
                   >
                     {formatMoney(Number(conta.saldo_corrente))}
                     <RefreshCw size={13} strokeWidth={2.5} className="opacity-60" />
@@ -420,7 +420,7 @@ export function ContasScreen({
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="btn-add border-brand-300 text-brand-600"
+            className="btn-add"
           >
             + Adicionar conta
           </button>

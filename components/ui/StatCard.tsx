@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/components/ui/icons";
 
 // A cor fica só no ícone (com o papel fixo de cada família: verde =
 // positivo, coral = dívida/saída, amarelo = atenção, roxo = cartões e
@@ -6,11 +6,11 @@ import type { LucideIcon } from "lucide-react";
 // neutra -- vários blocos pastel lado a lado viravam um arco-íris sem
 // significado.
 const TONES: Record<string, string> = {
-  brand: "bg-brand-100 text-brand-700",
-  coral: "bg-coral-100 text-coral-500",
-  sun: "bg-sun-100 text-sun-500",
-  grape: "bg-grape-100 text-grape-500",
-  sky: "bg-sky-100 text-sky-500",
+  brand: "bg-brand-500",
+  coral: "bg-coral-400",
+  sun: "bg-sun-400",
+  grape: "bg-grape-400",
+  sky: "bg-sky-400",
 };
 
 export function StatCard({
@@ -29,8 +29,8 @@ export function StatCard({
   return (
     <div className="flex min-w-0 flex-col gap-2 rounded-2xl bg-white p-3 shadow-card">
       <div className="flex min-w-0 items-center gap-2">
-        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${TONES[tone]}`}>
-          <Icon size={15} strokeWidth={2.25} aria-hidden />
+        <span className={`app-icon h-7 w-7 rounded-[8px] ${TONES[tone]}`}>
+          <Icon size={16} weight="fill" aria-hidden />
         </span>
         <span className="truncate text-[13px] font-medium text-ink-500">{label}</span>
       </div>

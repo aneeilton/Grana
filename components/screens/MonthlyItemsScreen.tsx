@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, CreditCard, Pencil, Receipt, Repeat, Trash2, TrendingUp, Wallet } from "lucide-react";
+import { Check, CreditCard, Pencil, Receipt, Repeat, Trash2, TrendingUp, Wallet } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
@@ -16,11 +16,11 @@ import type { Conta, Item, ItemTipo, Lancamento } from "@/lib/types";
 type Tone = "brand" | "sky" | "sun" | "coral" | "grape";
 
 const TONE_CLASSES: Record<Tone, { chip: string; value: string; dash: string }> = {
-  brand: { chip: "bg-brand-100 text-brand-700", value: "text-brand-700", dash: "border-brand-300 text-brand-600" },
-  sky: { chip: "bg-sky-500/10 text-sky-500", value: "text-sky-500", dash: "border-sky-400 text-sky-500" },
-  sun: { chip: "bg-sun-500/10 text-sun-500", value: "text-sun-500", dash: "border-sun-400 text-sun-500" },
-  coral: { chip: "bg-coral-500/10 text-coral-500", value: "text-coral-500", dash: "border-coral-400 text-coral-500" },
-  grape: { chip: "bg-grape-500/10 text-grape-500", value: "text-grape-500", dash: "border-grape-400 text-grape-500" },
+  brand: { chip: "bg-brand-500", value: "text-ink-900", dash: "" },
+  sky: { chip: "bg-sky-400", value: "text-ink-900", dash: "" },
+  sun: { chip: "bg-sun-400", value: "text-ink-900", dash: "" },
+  coral: { chip: "bg-coral-400", value: "text-ink-900", dash: "" },
+  grape: { chip: "bg-grape-400", value: "text-ink-900", dash: "" },
 };
 
 // O icone e derivado do tipo aqui dentro (nao recebido via prop) porque
@@ -618,7 +618,7 @@ export function MonthlyItemsScreen({
       : 0;
     const uso = item.cartao && item.limite ? Math.min(1, valorFaturaAtual / item.limite) : null;
     const usoCor =
-      uso === null ? "" : uso >= 0.9 ? "bg-coral-500" : uso >= 0.7 ? "bg-sun-500" : "bg-brand-600";
+      uso === null ? "" : uso >= 0.9 ? "bg-coral-500" : uso >= 0.7 ? "bg-sun-400" : "bg-brand-500";
     const meta = [
       showDia && item.dia_vencimento ? `Vence dia ${item.dia_vencimento}` : null,
       showExpectativa && item.expectativa ? "Expectativa" : null,
@@ -629,13 +629,13 @@ export function MonthlyItemsScreen({
         : null,
       item.parcelas_total ? `Parcela ${rotuloParcela(item, todosLancamentos, competencia) ?? `de ${item.parcelas_total}`}` : null,
     ].filter(Boolean);
-    const chip = item.cartao ? "bg-grape-100 text-grape-500" : tones.chip;
+    const chip = item.cartao ? "bg-grape-400" : tones.chip;
     return (
       <Card key={item.id}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
-            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${chip}`}>
-              <ItemIcon size={18} strokeWidth={2} aria-hidden />
+            <span className={`app-icon h-9 w-9 rounded-[10px] ${chip}`}>
+              <ItemIcon size={19} weight="fill" aria-hidden />
             </span>
             <div className="min-w-0">
               <p className="truncate text-[15px] font-semibold text-ink-900">{item.nome}</p>
@@ -643,7 +643,7 @@ export function MonthlyItemsScreen({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1 pr-1 pt-1">
-            <button onClick={() => startEdit(item)} className="icon-btn hover:text-brand-700" aria-label={`Editar ${item.nome}`}>
+            <button onClick={() => startEdit(item)} className="icon-btn text-accent hover:text-accent-700" aria-label={`Editar ${item.nome}`}>
               <Pencil size={17} strokeWidth={2} aria-hidden />
             </button>
             <button onClick={() => removeItem(item.id)} className="icon-btn hover:text-coral-500" aria-label={`Remover ${item.nome}`}>
@@ -730,7 +730,7 @@ export function MonthlyItemsScreen({
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="text-[15px] font-semibold text-ink-900">{formatMoney(valor)}</span>
-                      <button onClick={() => startEdit(compra)} className="icon-btn hover:text-brand-700" aria-label={`Editar ${compra.nome}`}>
+                      <button onClick={() => startEdit(compra)} className="icon-btn text-accent hover:text-accent-700" aria-label={`Editar ${compra.nome}`}>
                         <Pencil size={16} strokeWidth={2} aria-hidden />
                       </button>
                       <button onClick={() => removeItem(compra.id)} className="icon-btn hover:text-coral-500" aria-label={`Remover ${compra.nome}`}>
@@ -800,7 +800,7 @@ export function MonthlyItemsScreen({
 
         {!contaPadraoId && (
           <p className="caption px-1">
-            Defina uma conta padrão em <Link href="/patrimonio" className="font-semibold text-brand-700 underline underline-offset-2">Patrimônio</Link> para
+            Defina uma conta padrão em <Link href="/patrimonio" className="font-medium text-accent">Patrimônio</Link> para
             que marcar como {valueDoneLabel.toLowerCase()} atualize o saldo automaticamente.
           </p>
         )}
@@ -887,7 +887,7 @@ export function MonthlyItemsScreen({
                       setCartao(e.target.checked);
                       if (e.target.checked) setFixo(true);
                     }}
-                    className="h-5 w-5 shrink-0 rounded accent-brand-600"
+                    className="h-5 w-5 shrink-0 rounded accent-[#007AFF]"
                   />
                   É um cartão de crédito
                 </label>
@@ -909,7 +909,7 @@ export function MonthlyItemsScreen({
                 checked={fixo}
                 disabled={cartao}
                 onChange={(e) => setFixo(e.target.checked)}
-                className="h-5 w-5 shrink-0 rounded accent-brand-600 disabled:opacity-50"
+                className="h-5 w-5 shrink-0 rounded accent-[#007AFF] disabled:opacity-50"
               />
               É {tipo === "receita" ? "uma receita" : "uma despesa"} fixa (repete todo mês)
             </label>
@@ -924,7 +924,7 @@ export function MonthlyItemsScreen({
                       setMesesSazonal([Number(competencia.slice(5, 7))]);
                     }
                   }}
-                  className="h-5 w-5 shrink-0 rounded accent-brand-600"
+                  className="h-5 w-5 shrink-0 rounded accent-[#007AFF]"
                 />
                 Repete só em alguns meses do ano (anual/sazonal)
               </label>
@@ -943,7 +943,7 @@ export function MonthlyItemsScreen({
                       }
                       aria-pressed={on}
                       className={`min-h-11 rounded-xl text-[13px] font-semibold transition active:scale-95 ${
-                        on ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-500"
+                        on ? "bg-accent text-white" : "bg-ink-100 text-ink-700"
                       }`}
                     >
                       {rotulo}
@@ -1044,7 +1044,7 @@ export function MonthlyItemsScreen({
                   type="checkbox"
                   checked={expectativa}
                   onChange={(e) => setExpectativa(e.target.checked)}
-                  className="h-5 w-5 shrink-0 rounded accent-brand-600"
+                  className="h-5 w-5 shrink-0 rounded accent-[#007AFF]"
                 />
                 É uma expectativa (não garantido)
               </label>

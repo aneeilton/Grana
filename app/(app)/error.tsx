@@ -1,6 +1,6 @@
 "use client";
 
-import { OctagonAlert } from "lucide-react";
+import { OctagonAlert } from "@/components/ui/icons";
 
 export default function AppError({
   error,

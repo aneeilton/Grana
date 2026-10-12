@@ -79,7 +79,7 @@ export function AccountSyncCard({
             setNotice(null);
           }}
           className={`flex min-h-10 flex-1 items-center justify-center rounded-lg text-[13px] font-semibold transition ${
-            mode === "criar" ? "bg-white text-brand-700 shadow-card" : "text-ink-500"
+            mode === "criar" ? "bg-white text-ink-900 shadow-segment" : "text-ink-900"
           }`}
         >
           Criar login
@@ -91,7 +91,7 @@ export function AccountSyncCard({
             setNotice(null);
           }}
           className={`flex min-h-10 flex-1 items-center justify-center rounded-lg text-[13px] font-semibold transition ${
-            mode === "entrar" ? "bg-white text-brand-700 shadow-card" : "text-ink-500"
+            mode === "entrar" ? "bg-white text-ink-900 shadow-segment" : "text-ink-900"
           }`}
         >
           Já tenho conta

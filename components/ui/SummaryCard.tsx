@@ -11,10 +11,10 @@ import type { ReactNode } from "react";
  * despesas, grape = cartões/projeção, sky = consórcio.
  */
 const TONES = {
-  brand: "from-brand-600 to-brand-900",
-  coral: "from-coral-600 to-coral-900",
-  grape: "from-grape-600 to-grape-900",
-  sky: "from-sky-600 to-sky-900",
+  brand: "bg-brand-600",
+  coral: "bg-coral-500",
+  grape: "bg-grape-500",
+  sky: "bg-sky-500",
 } as const;
 
 export type SummaryRow = {
@@ -56,9 +56,9 @@ export function SummaryCard({
   children?: ReactNode;
 }) {
   return (
-    <section className={`rounded-3xl bg-gradient-to-br ${TONES[tone]} p-5 text-white shadow-hero`}>
+    <section className={`rounded-3xl ${TONES[tone]} p-5 text-white`}>
       <p className="text-[13px] font-medium text-white/75">{title}</p>
-      <p className="mt-1 text-[34px] font-bold leading-none tracking-tight">
+      <p className="mt-1.5 text-[34px] font-bold leading-none tracking-[-0.02em]">
         {value}
         {valueSuffix && <span className="ml-1 text-[17px] font-semibold text-white/70">{valueSuffix}</span>}
       </p>

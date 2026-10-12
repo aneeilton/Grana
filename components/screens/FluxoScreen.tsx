@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CarFront, CreditCard, TrendingUp, Wallet } from "lucide-react";
+import { CarFront, CreditCard, TrendingUp, Wallet } from "@/components/ui/icons";
 import { TopHeader } from "@/components/TopHeader";
 import { MonthlyItemsScreen } from "@/components/screens/MonthlyItemsScreen";
 import { CartoesScreen } from "@/components/screens/CartoesScreen";

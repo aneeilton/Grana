@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeftRight, CalendarRange, House, Landmark, LayoutGrid } from "lucide-react";
+import { ArrowLeftRight, CalendarRange, House, Landmark, LayoutGrid } from "@/components/ui/icons";
 
 const TABS = [
   { href: "/", label: "Início", icon: House },
@@ -13,9 +13,8 @@ const TABS = [
 ];
 
 /**
- * Barra de abas fixa no rodapé: material translúcido sobre o conteúdo
- * (separa controle de conteúdo), rótulo de uma palavra em cada aba e a
- * aba atual marcada por cor + peso + indicador -- não só pela cor.
+ * Barra de abas no padrão do iOS: material translúcido sobre o conteúdo,
+ * ícone preenchido + tinta azul na aba atual, contorno cinza nas demais.
  */
 export function BottomNav() {
   const pathname = usePathname();
@@ -23,9 +22,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Seções do app"
-      className="safe-bottom sticky bottom-0 z-20 border-t border-ink-200/70 bg-white/85 shadow-bar backdrop-blur-xl backdrop-saturate-150"
+      className="safe-bottom sticky bottom-0 z-20 bg-[#F9F9F9]/80 shadow-bar backdrop-blur-xl backdrop-saturate-[1.8]"
     >
-      <ul className="flex items-stretch justify-between px-1.5">
+      <ul className="flex items-stretch justify-between px-1">
         {TABS.map((tab) => {
           const active = tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
           const Icon = tab.icon;
@@ -34,27 +33,12 @@ export function BottomNav() {
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className="group relative flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl px-1 pb-1.5 pt-2 transition active:scale-95"
+                className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 pb-1 pt-1.5 transition active:opacity-60 ${
+                  active ? "text-accent" : "text-[#8E8E93]"
+                }`}
               >
-                <span
-                  aria-hidden
-                  className={`absolute top-0 h-[3px] w-6 rounded-full bg-brand-600 transition-opacity duration-200 ${
-                    active ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-                <Icon
-                  size={22}
-                  strokeWidth={active ? 2.4 : 1.8}
-                  className={active ? "text-brand-700" : "text-ink-400 group-hover:text-ink-700"}
-                  aria-hidden
-                />
-                <span
-                  className={`truncate text-[11px] ${
-                    active ? "font-semibold text-brand-700" : "font-medium text-ink-500"
-                  }`}
-                >
-                  {tab.label}
-                </span>
+                <Icon size={26} weight={active ? "fill" : "regular"} aria-hidden />
+                <span className="truncate text-[10px] font-medium leading-none tracking-[0.01em]">{tab.label}</span>
               </Link>
             </li>
           );

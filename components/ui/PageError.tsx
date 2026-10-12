@@ -1,4 +1,4 @@
-import { OctagonAlert } from "lucide-react";
+import { OctagonAlert } from "@/components/ui/icons";
 
 function describeError(error: unknown): string {
   if (error instanceof Error) return `${error.name}: ${error.message}`;

@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/components/ui/icons";
 
 /**
  * Título grande no topo de cada aba (no estilo "large title"): o nome da
@@ -20,7 +20,7 @@ export function TopHeader({
     <header className="px-5 pb-3 pt-7">
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[30px] font-bold leading-tight tracking-tight text-ink-900">{title}</h1>
+          <h1 className="text-[34px] font-bold leading-tight tracking-[-0.02em] text-ink-900">{title}</h1>
           {subtitle && <p className="mt-0.5 text-[15px] text-ink-500">{subtitle}</p>}
         </div>
         {right}

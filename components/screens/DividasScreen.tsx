@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileWarning, PartyPopper, Trash2 } from "lucide-react";
+import { FileWarning, PartyPopper, Trash2 } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
@@ -229,7 +229,7 @@ export function DividasScreen({
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="btn-add border-brand-300 text-brand-600"
+            className="btn-add"
           >
             + Adicionar dívida
           </button>

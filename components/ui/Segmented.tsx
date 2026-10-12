@@ -18,7 +18,7 @@ export function Segmented<T extends string>({
   label: string;
 }) {
   return (
-    <div role="tablist" aria-label={label} className="flex gap-1 rounded-xl bg-ink-100 p-1">
+    <div role="tablist" aria-label={label} className="flex rounded-[10px] bg-[#76768014] p-0.5">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -27,11 +27,10 @@ export function Segmented<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(o.value)}
-            className={`flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg px-1 text-[13px] transition duration-200 ease-out-expo ${
-              active ? "bg-white font-semibold text-ink-900 shadow-card" : "font-medium text-ink-500 hover:text-ink-800"
+            className={`flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] px-1 text-[13px] transition duration-200 ease-out-expo ${
+              active ? "bg-white font-semibold text-ink-900 shadow-segment" : "font-medium text-ink-900 hover:bg-white/50"
             }`}
           >
-            {o.dot && active && <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${o.dot}`} />}
             <span className="truncate">{o.label}</span>
           </button>
         );

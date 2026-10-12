@@ -16,16 +16,16 @@
     font-feature-settings: "tnum" 1;
   }
   ::selection {
-    @apply bg-brand-200 text-ink-900;
+    @apply bg-accent-100 text-ink-900;
   }
   input,
   select,
   textarea {
-    caret-color: theme("colors.brand.600");
+    caret-color: theme("colors.accent.DEFAULT");
   }
   /* foco visível só pra teclado; toque/mouse não ganham anel */
   :focus-visible {
-    outline: 2px solid theme("colors.brand.500");
+    outline: 2px solid theme("colors.accent.DEFAULT");
     outline-offset: 2px;
     border-radius: 0.5rem;
   }
@@ -47,25 +47,25 @@
 @layer components {
   /* ---- botões: mesma forma em todo o app, alvo mínimo de 44px ---- */
   .btn {
-    @apply inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-[15px] font-semibold transition duration-150 ease-out-expo active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 text-[17px] font-semibold transition duration-150 ease-out-expo active:scale-[0.97] active:opacity-80 disabled:pointer-events-none disabled:opacity-40;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply btn bg-accent text-white hover:bg-accent-600;
   }
   .btn-secondary {
-    @apply btn bg-ink-100 text-ink-800 hover:bg-ink-200;
+    @apply btn bg-ink-100 text-accent hover:bg-ink-200;
   }
   .btn-danger {
     @apply btn bg-coral-50 text-coral-500 hover:bg-coral-100;
   }
   /* "+ Adicionar": ação de criar no fim das listas */
   .btn-add {
-    @apply btn w-full border-2 border-dashed bg-transparent;
+    @apply btn w-full bg-white text-accent shadow-card hover:bg-accent-50;
   }
 
   /* ---- campos: 16px evita o zoom automático do Safari no iPhone ---- */
   .field {
-    @apply min-h-11 w-full rounded-xl border border-ink-200 bg-white px-3.5 text-base text-ink-900 outline-none transition duration-150 placeholder:text-ink-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+    @apply min-h-11 w-full rounded-xl border border-ink-200 bg-white px-3.5 text-base text-ink-900 outline-none transition duration-150 placeholder:text-ink-400 focus:border-accent focus:ring-4 focus:ring-accent/15;
   }
   .field-label {
     @apply block px-0.5 pb-1 text-[13px] font-medium text-ink-500;
@@ -83,13 +83,13 @@
 
   /* ---- títulos de seção e grupos de lista ---- */
   .section-title {
-    @apply text-[17px] font-bold tracking-tight text-ink-900;
+    @apply text-[20px] font-bold tracking-tight text-ink-900;
   }
   .group-label {
-    @apply px-1 text-[13px] font-semibold text-ink-500;
+    @apply px-4 text-[13px] font-normal uppercase tracking-[0.02em] text-ink-400;
   }
   .caption {
-    @apply text-xs text-ink-500;
+    @apply text-[13px] leading-snug text-ink-400;
   }
 }
 
@@ -103,5 +103,12 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@layer components {
+  /* ícone em quadrado colorido sólido com desenho branco (estilo Ajustes) */
+  .app-icon {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] text-white;
   }
 }

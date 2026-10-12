@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { CreditCard } from "lucide-react";
+import { CreditCard } from "@/components/ui/icons";
 import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { currentCompetencia, formatMoney } from "@/lib/format";
@@ -82,8 +82,8 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
               <li key={c.id} className="px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-grape-100 text-grape-500">
-                      <CreditCard size={17} strokeWidth={2} aria-hidden />
+                    <span className="app-icon bg-grape-400">
+                      <CreditCard size={18} weight="fill" aria-hidden />
                     </span>
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-medium text-ink-900">{c.nome}</p>

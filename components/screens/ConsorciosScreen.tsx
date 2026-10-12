@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BadgeCheck, CarFront, Gavel, Trash2 } from "lucide-react";
+import { BadgeCheck, CarFront, Gavel, Trash2 } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { Card, EmptyState } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
@@ -337,8 +337,8 @@ export function ConsorciosScreen({
           <Card key={c.id}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-500">
-                  <CarFront size={16} strokeWidth={2} />
+                <span className="app-icon bg-sky-400">
+                  <CarFront size={18} weight="fill" aria-hidden />
                 </span>
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-ink-800">{c.nome}</p>
@@ -436,7 +436,7 @@ export function ConsorciosScreen({
             {!c.contemplado && c.lance_status !== "intencao" && lanceDe !== c.id && (
               <button
                 onClick={() => abrirLance(r)}
-                className="btn-add mt-3 border-sun-400 text-sun-500"
+                className="btn-add mt-3"
               >
                 <Gavel size={14} strokeWidth={2.25} />
                 Planejar lance
@@ -527,7 +527,7 @@ export function ConsorciosScreen({
               type="checkbox"
               checked={contemplado}
               onChange={(e) => setContemplado(e.target.checked)}
-              className="h-5 w-5 shrink-0 rounded accent-brand-600"
+              className="h-5 w-5 shrink-0 rounded accent-[#007AFF]"
             />
             Já foi contemplado (já tenho o bem)
           </label>
@@ -547,7 +547,7 @@ export function ConsorciosScreen({
       ) : (
         <button
           onClick={() => setOpen(true)}
-          className="btn-add border-sky-400 text-sky-600"
+          className="btn-add"
         >
           + Adicionar consórcio
         </button>
