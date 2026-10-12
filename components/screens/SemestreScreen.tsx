@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CalendarRange, TriangleAlert } from "@/components/ui/icons";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, SectionHeader } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
+import { MonthBars, type MonthBar } from "@/components/ui/MonthBars";
 import { SemestreGrid } from "@/components/screens/SemestreGrid";
 import { SimuladorCard } from "@/components/screens/SimuladorCard";
 import { buildMonthlyProjection, mesCritico } from "@/lib/projection";
@@ -41,9 +41,12 @@ export function SemestreScreen({
   const critico = mesCritico(series);
   const fechamentoFinal = series[series.length - 1]?.saldoFinal ?? saldoAtual;
 
-  const chartData = series.map((s) => ({
-    name: monthLabel(s.competencia).slice(0, 3),
-    saldo: s.saldoFinal,
+  const barras: MonthBar[] = series.map((s) => ({
+    key: s.competencia,
+    label: monthLabel(s.competencia),
+    longLabel: monthYearLabel(s.competencia).toLowerCase(),
+    value: s.saldoFinal,
+    status: s.saldoFinal < 0 ? "danger" : s.competencia === critico?.competencia ? "warn" : undefined,
   }));
 
   return (
@@ -96,44 +99,12 @@ export function SemestreScreen({
         <section>
           <SectionHeader title="Saldo previsto por mês" />
           <Card>
-            <div className="h-44" role="img" aria-label="Gráfico do saldo previsto no fim de cada mês do semestre">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "#6E6E73", fontFamily: "inherit" }}
-                  />
-                  <YAxis hide />
-                  <Tooltip
-                    cursor={{ fill: "rgba(18, 25, 23, 0.04)", radius: 8 }}
-                    formatter={(value: number) => [formatMoney(value), "Saldo"]}
-                    contentStyle={{
-                      borderRadius: 12,
-                      border: "none",
-                      boxShadow: "0 6px 18px -10px rgba(18,25,23,0.3)",
-                      fontFamily: "inherit",
-                      fontSize: 13,
-                    }}
-                  />
-                  <Bar dataKey="saldo" radius={[8, 8, 8, 8]} maxBarSize={36}>
-                    {series.map((s) => (
-                      <Cell
-                        key={s.competencia}
-                        fill={
-                          s.competencia === critico?.competencia
-                            ? s.saldoFinal < 0
-                              ? "#FF3B30"
-                              : "#FF9500"
-                            : "#AF52DE"
-                        }
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <MonthBars
+              data={barras}
+              format={formatMoney}
+              valueLabel="Saldo no fim de"
+              ariaLabel="Gráfico do saldo previsto no fim de cada mês do semestre"
+            />
             {critico && (
               <p className="caption mt-2 flex items-center gap-1.5">
                 <span

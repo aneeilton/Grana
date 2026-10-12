@@ -15,7 +15,7 @@ export default function AppError({
         <OctagonAlert size={22} strokeWidth={1.75} />
       </span>
       <p className="text-[17px] font-semibold text-ink-900">Algo deu errado ao carregar essa tela</p>
-      <p className="max-w-xs break-words rounded-2xl bg-white p-3 text-xs text-ink-500 shadow-card">
+      <p className="max-w-xs break-words rounded-2xl bg-surface p-3 text-xs text-ink-500 shadow-card">
         {error.message || "Erro sem mensagem (verifique os Runtime Logs na Vercel)."}
         {error.digest && (
           <>

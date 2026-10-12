@@ -4,16 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
-  ArrowDownRight,
-  ArrowUpRight,
+  CaretDown,
   Check,
   CreditCard,
   Eye,
   EyeOff,
-  FileWarning,
-  Gem,
   PartyPopper,
-  PiggyBank,
   Receipt,
   Repeat,
   ShieldCheck,
@@ -24,9 +20,9 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
-import { StatCard } from "@/components/ui/StatCard";
 import { DespesaDiariaCard } from "@/components/screens/DespesaDiariaCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
+import { MonthBars, type MonthBar } from "@/components/ui/MonthBars";
 import { buildMonthlyProjection, mesCritico, valoresEfetivosPorItem } from "@/lib/projection";
 import { comprasPorCartao, rotuloParcela, totalComprasNoMes } from "@/lib/cartoes";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
@@ -363,13 +359,6 @@ export function DashboardScreen({
         : { bg: "bg-coral-100", text: "text-coral-500", label: "Baixa" };
 
   const critico = useMemo(() => mesCritico(proximoSemestre), [proximoSemestre]);
-  const criticoTone =
-    critico && critico.saldoFinal < 0
-      ? { bg: "bg-coral-100", text: "text-coral-500" }
-      : critico && critico.saldoFinal < reserva.custoMensal
-        ? { bg: "bg-sun-100", text: "text-sun-500" }
-        : { bg: "bg-white shadow-card", text: "text-ink-900" };
-
   // "Sobra hoje" e "saúde financeira" olham sempre para o mês real de hoje,
   // não para o mês selecionado no seletor (que pode ser passado/futuro).
   const mesAtual = useMemo(() => series.find((s) => s.isCurrent) ?? series[0], [series]);
@@ -436,6 +425,33 @@ export function DashboardScreen({
 
   const toneText = (t: { text: string }) => t.text;
 
+  const maxFluxo = Math.max(mes.receitaTotal, mes.despesaTotal);
+
+  const criticoAperto = !!critico && critico.saldoFinal < reserva.custoMensal;
+
+  const barrasSemestre: MonthBar[] = proximoSemestre.map((m) => ({
+    key: m.competencia,
+    label: monthLabel(m.competencia),
+    longLabel: monthYearLabel(m.competencia).toLowerCase(),
+    value: m.saldoFinal,
+    status:
+      m.saldoFinal < 0
+        ? "danger"
+        : m.competencia === critico?.competencia && criticoAperto
+          ? "warn"
+          : undefined,
+  }));
+
+  const composicao = {
+    partes: [
+      { label: "Contas", valor: saldoContas, bar: "bg-brand-500" },
+      { label: "Investido", valor: totalAplicado, bar: "bg-grape-400" },
+      { label: "Bens", valor: totalBens, bar: "bg-sun-400" },
+      { label: "Dívidas", valor: totalDividas, bar: "bg-coral-400" },
+    ],
+    total: Math.max(0, saldoContas) + totalAplicado + totalBens + totalDividas,
+  };
+
   return (
     <div>
       <header className="flex items-end justify-between gap-3 px-5 pb-3 pt-7">
@@ -447,7 +463,7 @@ export function DashboardScreen({
           onClick={alternarOculto}
           aria-label={oculto ? "Mostrar valores" : "Ocultar valores"}
           aria-pressed={oculto}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-ink-700 shadow-card transition active:scale-95"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink-700 shadow-card transition active:scale-95"
         >
           {oculto ? <EyeOff size={19} strokeWidth={2} aria-hidden /> : <Eye size={19} strokeWidth={2} aria-hidden />}
         </button>
@@ -486,117 +502,35 @@ export function DashboardScreen({
         </SummaryCard>
 
         <section>
-          <SectionHeader
-            title="Patrimônio"
-            action={
-              <Link href="/patrimonio" className="-my-2 -mr-2 inline-flex min-h-11 items-center rounded-xl px-2 text-[15px] font-normal text-accent transition hover:bg-accent-50">
-                Abrir
-              </Link>
-            }
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard icon={TrendingUp} label="Líquido" value={fmt(patrimonioLiquido)} tone="brand" />
-            <StatCard icon={PiggyBank} label="Investido" value={fmt(totalAplicado)} tone="grape" />
-            <StatCard icon={FileWarning} label="Dívidas" value={fmt(totalDividas)} tone="coral" />
-            <StatCard icon={Gem} label="Bens" value={fmt(totalBens)} tone="sun" />
-          </div>
-          <Card className="mt-3 flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="app-icon bg-sky-400">
-                <ShieldCheck size={18} weight="fill" aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[15px] font-semibold text-ink-900">
-                  Reserva <span className={`font-semibold ${toneText(reservaTone)}`}>· {reservaTone.label}</span>
-                </p>
-                <p className="caption">
-                  {reserva.meses === null
-                    ? "Sem despesas previstas para calcular"
-                    : `Contas + investido cobrem ${fmt(reserva.custoMensal)}/mês de custo`}
-                </p>
-              </div>
-            </div>
-            <p className="shrink-0 text-right">
-              <span className="text-[22px] font-bold tracking-tight text-ink-900">
-                {reserva.meses === null
-                  ? "—"
-                  : oculto
-                    ? "••"
-                    : reserva.meses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
-              </span>
-              <span className="block text-xs font-medium text-ink-500">meses</span>
-            </p>
-          </Card>
-        </section>
-
-        <section>
-          <SectionHeader title="Saúde financeira" />
+          <SectionHeader title={`Fluxo de ${monthLabel(competencia).toLowerCase()}`} />
           <Card>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="app-icon bg-coral-400">
-                  <Activity size={18} weight="bold" aria-hidden />
-                </span>
-                <p className={`text-[17px] font-semibold ${notaTone.text}`}>{notaTone.label}</p>
-              </div>
-              <p className="text-[28px] font-bold leading-none tracking-tight text-ink-900">
-                {saudeFinanceira.nota}
-                <span className="text-[15px] font-medium text-ink-400">/100</span>
-              </p>
-            </div>
-            <ul className="mt-4 space-y-3">
-              {saudeFinanceira.componentes.map((c) => (
-                <li key={c.label}>
-                  <div className="flex items-center justify-between text-[13px]">
-                    <span className="text-ink-700">{c.label}</span>
-                    <span className="font-semibold text-ink-900">{Math.round(c.score)}</span>
+            <ul className="space-y-3">
+              {[
+                { label: "Entradas", valor: mes.receitaTotal, bar: "bg-brand-500" },
+                { label: "Saídas", valor: mes.despesaTotal, bar: "bg-coral-400" },
+              ].map((r) => (
+                <li key={r.label}>
+                  <div className="flex items-baseline justify-between gap-3 text-[15px]">
+                    <span className="text-ink-700">{r.label}</span>
+                    <span className="font-semibold text-ink-900">{fmt(r.valor)}</span>
                   </div>
-                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
+                  <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-ink-100">
                     <div
-                      className={`h-full rounded-full transition-[width] duration-500 ease-out-expo ${
-                        c.score >= 60 ? "bg-brand-500" : c.score >= 40 ? "bg-sun-400" : "bg-coral-400"
-                      }`}
-                      style={{ width: `${Math.max(4, c.score)}%` }}
+                      className={`h-full rounded-full ${r.bar} transition-[width] duration-500 ease-out-expo`}
+                      style={{ width: `${maxFluxo > 0 ? Math.max(2, (r.valor / maxFluxo) * 100) : 0}%` }}
                     />
                   </div>
                 </li>
               ))}
             </ul>
-            {saudeFinanceira.pior.score < 60 && (
-              <p className="mt-4 rounded-xl bg-ink-50 p-3 text-[13px] text-ink-700">{saudeFinanceira.pior.dica}</p>
-            )}
-          </Card>
-        </section>
-
-        <DespesaDiariaCard competencia={competencia} gastosDiarios={gastosDiarios} onChange={setGastosDiarios} />
-
-        <section>
-          <SectionHeader title={`Fluxo de ${monthLabel(competencia).toLowerCase()}`} />
-          <Card className="p-0">
-            <ul className="divide-y divide-ink-100">
-              <li className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
-                <span className="flex items-center gap-2.5 text-[15px] text-ink-800">
-                  <ArrowDownRight size={18} strokeWidth={2.25} className="text-brand-600" aria-hidden />
-                  Entradas
-                </span>
-                <span className="text-[15px] font-semibold text-brand-700">{fmt(mes.receitaTotal)}</span>
-              </li>
-              <li className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
-                <span className="flex items-center gap-2.5 text-[15px] text-ink-800">
-                  <ArrowUpRight size={18} strokeWidth={2.25} className="text-coral-500" aria-hidden />
-                  Saídas
-                </span>
-                <span className="text-[15px] font-semibold text-coral-500">{fmt(mes.despesaTotal)}</span>
-              </li>
-              <li className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
-                <span className="text-[15px] font-semibold text-ink-900">Resultado do mês</span>
-                <span className={`text-[15px] font-bold ${saldoMes >= 0 ? "text-ink-900" : "text-coral-500"}`}>
-                  {saldoMes >= 0 ? "+" : ""}
-                  {fmt(saldoMes)}
-                </span>
-              </li>
-            </ul>
-            <p className="caption border-t border-ink-100 px-4 py-3">
+            <div className="mt-4 flex items-baseline justify-between gap-3 border-t border-ink-100 pt-3">
+              <span className="text-[15px] font-semibold text-ink-900">Resultado do mês</span>
+              <span className={`text-[17px] font-bold ${saldoMes >= 0 ? "text-brand-700" : "text-coral-500"}`}>
+                {saldoMes >= 0 ? "+" : ""}
+                {fmt(saldoMes)}
+              </span>
+            </div>
+            <p className="caption mt-1">
               Saldo projetado até {ultimoDiaMes}/{monthLabel(competencia).toLowerCase()}:{" "}
               <span className="font-semibold text-ink-900">{fmt(mes.saldoFinal)}</span>
             </p>
@@ -612,83 +546,54 @@ export function DashboardScreen({
               </Link>
             }
           />
-          {critico && (
-            <div
-              role={critico.saldoFinal < 0 ? "alert" : undefined}
-              className={`mb-3 flex items-start gap-3 rounded-2xl p-4 ${criticoTone.bg}`}
-            >
-              <TriangleAlert size={20} strokeWidth={2.25} className={`mt-0.5 shrink-0 ${criticoTone.text}`} aria-hidden />
+          {critico && critico.saldoFinal < 0 && (
+            <div role="alert" className="mb-3 flex items-start gap-3 rounded-2xl bg-coral-100 p-4">
+              <TriangleAlert size={20} strokeWidth={2.25} className="mt-0.5 shrink-0 text-coral-500" aria-hidden />
               <div className="min-w-0">
-                <p className={`text-[15px] font-semibold ${criticoTone.text}`}>
-                  Mês mais apertado: {monthYearLabel(critico.competencia)}
+                <p className="text-[15px] font-semibold text-coral-500">
+                  {monthYearLabel(critico.competencia)} fecha no vermelho
                 </p>
                 <p className="mt-0.5 text-[13px] text-ink-700">
-                  {critico.saldoFinal < 0
-                    ? `O saldo previsto fica negativo no fim do mês (${fmt(critico.saldoFinal)}). Antecipe uma receita ou corte despesas antes disso.`
-                    : critico.saldoFinal < reserva.custoMensal
-                      ? `Sobram só ${fmt(critico.saldoFinal)} no fim do mês, menos que um mês do seu custo médio. Evite gastos novos até lá.`
-                      : `É o menor saldo previsto do período (${fmt(critico.saldoFinal)} no fim do mês), mas ainda com folga.`}
+                  Saldo previsto de {fmt(critico.saldoFinal)} no fim do mês. Antecipe uma receita ou corte despesas antes disso.
                 </p>
               </div>
             </div>
           )}
-          <Card className="p-0">
-            <ul className="divide-y divide-ink-100">
-              {[
-                { icon: TrendingUp, cor: "text-brand-600", label: "Receitas previstas", value: fmt(resumoSemestre.receitas) },
-                { icon: Repeat, cor: "text-ink-500", label: "Despesas fixas", value: fmt(resumoSemestre.fixas) },
-                { icon: Receipt, cor: "text-ink-500", label: "Pontuais e parceladas", value: fmt(resumoSemestre.pontuais) },
-              ].map((r) => (
-                <li key={r.label} className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
-                  <span className="flex min-w-0 items-center gap-2.5 text-[15px] text-ink-800">
-                    <r.icon size={18} strokeWidth={2} className={`shrink-0 ${r.cor}`} aria-hidden />
-                    <span className="truncate">{r.label}</span>
-                  </span>
-                  <span className="shrink-0 text-[15px] font-semibold text-ink-900">{r.value}</span>
-                </li>
-              ))}
-              {[
-                {
-                  label: "Comprometimento de renda",
-                  hint: "fixas + pontuais ÷ receitas",
-                  pct: resumoSemestre.comprometimento,
-                  tone: toneText(comprometimentoTone),
-                },
-                {
-                  label: "Peso dos cartões",
-                  hint: `${fmt(pesoCartoesDividas.cartoesMes)}/mês`,
-                  pct: pesoCartoesDividas.cartoesPct,
-                  tone: tomPctTexto(pesoCartoesDividas.cartoesPct, 30, 50),
-                },
-                {
-                  label: "Em parcelas",
-                  hint: `${fmt(pesoCartoesDividas.parcelasMes)}/mês`,
-                  pct: pesoCartoesDividas.parcelasPct,
-                  tone: tomPctTexto(pesoCartoesDividas.parcelasPct, 15, 30),
-                },
-              ].map((r) => (
-                <li key={r.label} className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] text-ink-800">{r.label}</p>
-                    <p className="caption">{r.hint} · da receita</p>
-                  </div>
-                  <span className={`shrink-0 text-[17px] font-bold ${r.tone}`}>{r.pct.toFixed(0)}%</span>
-                </li>
-              ))}
-            </ul>
-            {totalDividas > 0 && pesoCartoesDividas.dividasEmMeses !== null && (
-              <p className="caption border-t border-ink-100 px-4 py-3">
-                Dívidas ({fmt(totalDividas)}) equivalem a{" "}
-                <span className="font-semibold text-ink-900">
-                  {oculto
-                    ? "••"
-                    : pesoCartoesDividas.dividasEmMeses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}{" "}
-                  meses
-                </span>{" "}
-                da sua receita média.
+          <Card>
+            <MonthBars
+              data={barrasSemestre}
+              format={fmt}
+              valueLabel="Saldo no fim de"
+              ariaLabel="Saldo previsto no fim de cada um dos próximos 6 meses"
+            />
+            {critico && critico.saldoFinal >= 0 && (
+              <p className="caption mt-2 flex items-start gap-1.5">
+                <span
+                  aria-hidden
+                  className={`mt-1 h-2 w-2 shrink-0 rounded-full ${criticoAperto ? "bg-sun-400" : "bg-grape-400"}`}
+                />
+                <span>
+                  Mês mais apertado: <span className="font-semibold text-ink-900">{monthYearLabel(critico.competencia)}</span>
+                  {criticoAperto
+                    ? " — sobra menos que um mês do seu custo médio. Evite gastos novos até lá."
+                    : ", mas ainda com folga."}
+                </span>
               </p>
             )}
           </Card>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[
+              { label: "Renda comprometida", pct: resumoSemestre.comprometimento, tone: toneText(comprometimentoTone) },
+              { label: "Cartões", pct: pesoCartoesDividas.cartoesPct, tone: tomPctTexto(pesoCartoesDividas.cartoesPct, 30, 50) },
+              { label: "Parcelas", pct: pesoCartoesDividas.parcelasPct, tone: tomPctTexto(pesoCartoesDividas.parcelasPct, 15, 30) },
+            ].map((r) => (
+              <div key={r.label} className="min-w-0 rounded-2xl bg-surface p-3 shadow-card">
+                <p className={`text-[22px] font-bold leading-none tracking-tight ${r.tone}`}>{r.pct.toFixed(0)}%</p>
+                <p className="mt-1.5 text-[12px] leading-tight text-ink-500">{r.label}</p>
+              </div>
+            ))}
+          </div>
+          <p className="caption mt-2 px-1">Média dos próximos 6 meses, sobre a receita prevista.</p>
         </section>
 
         <section>
@@ -812,6 +717,121 @@ export function DashboardScreen({
               ))}
             </div>
           )}
+        </section>
+
+        <DespesaDiariaCard competencia={competencia} gastosDiarios={gastosDiarios} onChange={setGastosDiarios} />
+
+        <section>
+          <SectionHeader
+            title="Patrimônio"
+            action={
+              <Link href="/patrimonio" className="-my-2 -mr-2 inline-flex min-h-11 items-center rounded-xl px-2 text-[15px] font-normal text-accent transition hover:bg-accent-50">
+                Abrir
+              </Link>
+            }
+          />
+          <Card>
+            <p className="text-[13px] text-ink-500">Patrimônio líquido</p>
+            <p className="mt-0.5 text-[28px] font-bold leading-tight tracking-tight text-ink-900">{fmt(patrimonioLiquido)}</p>
+            {composicao.total > 0 && (
+              <div className="mt-3 flex h-2 w-full gap-0.5 overflow-hidden rounded-full" aria-hidden>
+                {composicao.partes.map((p) =>
+                  p.valor > 0 ? (
+                    <div key={p.label} className={p.bar} style={{ width: `${(p.valor / composicao.total) * 100}%` }} />
+                  ) : null
+                )}
+              </div>
+            )}
+            <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+              {composicao.partes.map((p) => (
+                <div key={p.label} className="min-w-0">
+                  <dt className="flex items-center gap-1.5 text-[13px] text-ink-500">
+                    <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${p.bar}`} />
+                    {p.label}
+                  </dt>
+                  <dd className="truncate pl-3.5 text-[15px] font-semibold text-ink-900">{fmt(p.valor)}</dd>
+                </div>
+              ))}
+            </dl>
+            {totalDividas > 0 && pesoCartoesDividas.dividasEmMeses !== null && (
+              <p className="caption mt-3 border-t border-ink-100 pt-3">
+                As dívidas equivalem a{" "}
+                <span className="font-semibold text-ink-900">
+                  {oculto
+                    ? "••"
+                    : pesoCartoesDividas.dividasEmMeses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}{" "}
+                  meses
+                </span>{" "}
+                da sua receita média.
+              </p>
+            )}
+          </Card>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="min-w-0 rounded-3xl bg-surface p-4 shadow-card">
+              <div className="flex items-center gap-2">
+                <span className="app-icon h-7 w-7 rounded-[8px] bg-sky-400">
+                  <ShieldCheck size={16} weight="fill" aria-hidden />
+                </span>
+                <span className="text-[13px] font-medium text-ink-500">Reserva</span>
+              </div>
+              <p className="mt-2 text-[22px] font-bold leading-none tracking-tight text-ink-900">
+                {reserva.meses === null
+                  ? "—"
+                  : oculto
+                    ? "••"
+                    : reserva.meses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                <span className="ml-1 text-[13px] font-medium text-ink-500">meses</span>
+              </p>
+              <p className={`mt-1 text-[13px] font-semibold ${reservaTone.text}`}>{reservaTone.label}</p>
+            </div>
+            <div className="min-w-0 rounded-3xl bg-surface p-4 shadow-card">
+              <div className="flex items-center gap-2">
+                <span className="app-icon h-7 w-7 rounded-[8px] bg-coral-400">
+                  <Activity size={16} weight="bold" aria-hidden />
+                </span>
+                <span className="text-[13px] font-medium text-ink-500">Saúde</span>
+              </div>
+              <p className="mt-2 text-[22px] font-bold leading-none tracking-tight text-ink-900">
+                {saudeFinanceira.nota}
+                <span className="text-[13px] font-medium text-ink-500">/100</span>
+              </p>
+              <p className={`mt-1 text-[13px] font-semibold ${notaTone.text}`}>{notaTone.label}</p>
+            </div>
+          </div>
+          <p className="caption mt-2 px-1">
+            Reserva: quantos meses contas + investimentos cobrem seu custo médio de {fmt(reserva.custoMensal)}.
+          </p>
+
+          <details className="group mt-3 rounded-3xl bg-surface shadow-card">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-[15px] text-ink-900 [&::-webkit-details-marker]:hidden">
+              Como a nota de saúde é calculada
+              <CaretDown size={16} weight="bold" className="shrink-0 text-ink-400 transition group-open:rotate-180" aria-hidden />
+            </summary>
+            <div className="border-t border-ink-100 px-4 pb-4 pt-3">
+              <ul className="space-y-3">
+                {saudeFinanceira.componentes.map((c) => (
+                  <li key={c.label}>
+                    <div className="flex items-center justify-between text-[13px]">
+                      <span className="text-ink-700">{c.label}</span>
+                      <span className="font-semibold text-ink-900">{Math.round(c.score)}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
+                      <div
+                        className={`h-full rounded-full ${
+                          c.score >= 60 ? "bg-brand-500" : c.score >= 40 ? "bg-sun-400" : "bg-coral-400"
+                        }`}
+                        style={{ width: `${Math.max(4, c.score)}%` }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {saudeFinanceira.pior.score < 60 && (
+                <p className="mt-4 rounded-xl bg-ink-50 p-3 text-[13px] text-ink-700">{saudeFinanceira.pior.dica}</p>
+              )}
+            </div>
+          </details>
         </section>
       </div>
     </div>

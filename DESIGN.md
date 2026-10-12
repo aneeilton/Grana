@@ -17,7 +17,9 @@ Fonte do sistema (`-apple-system` …): SF Pro no iPhone/Mac, Segoe UI no Window
 - Campos: 16px (sem zoom automático do Safari)
 - Rótulo da barra de abas: 10px (padrão do iOS)
 
-## Cor (sistema iOS, modo claro)
+## Cor (sistema iOS, claro e escuro)
+
+O tema segue o aparelho (`prefers-color-scheme`). As cores moram em variáveis CSS em `app/globals.css` (canais RGB) e o `tailwind.config.ts` aponta pra elas, então toda classe (`bg-ink-50`, `text-brand-700`…) troca sozinha no escuro, sem `dark:` nas telas. No escuro: fundo preto, superfícies `#1C1C1E`, cores do sistema na versão escura e tons de texto mais claros. Nunca use `bg-white` pra card: use `bg-surface`. `text-white` só sobre preenchimento colorido.
 
 | Token | Cor | Papel |
 |---|---|---|
@@ -49,3 +51,13 @@ Cada família tem um tom de preenchimento (o system color) e um tom de texto mai
 ## Movimento
 
 150–250ms, só para estado (toque com leve redução de opacidade/escala, barras de progresso, troca de segmento). Respeita `prefers-reduced-motion`.
+
+## Gráficos
+
+- `MonthBars` (`components/ui/MonthBars.tsx`): barras por mês em SVG com as cores do tema. Roxo = normal, laranja = mês apertado, vermelho = saldo negativo. Toque mostra o valor; sem toque, o detalhe mostra o pior mês. Usado na Home e no Semestre.
+- Comparações simples (entradas × saídas, composição do patrimônio) são barras horizontais em HTML, sem biblioteca.
+- Texto e valores ficam em tinta neutra; a cor fica só na marca.
+
+## Home (ordem)
+
+Saldo → Fluxo do mês (entradas × saídas) → Próximos 6 meses (gráfico + 3 percentuais) → Lançamentos do mês → Gastos do dia a dia → Patrimônio (líquido + composição, reserva e saúde lado a lado; detalhe da nota recolhido).

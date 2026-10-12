@@ -10,14 +10,14 @@ export default function Loading() {
         <div className="mt-2 h-4 w-56 rounded-md bg-ink-200/50" />
       </div>
       <div className="space-y-6 px-4 pt-1">
-        <div className="h-[52px] rounded-2xl bg-white shadow-card" />
+        <div className="h-[52px] rounded-2xl bg-surface shadow-card" />
         <div className="h-40 rounded-3xl bg-ink-200/70" />
         <div className="grid grid-cols-2 gap-3">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-[76px] rounded-2xl bg-white shadow-card" />
+            <div key={i} className="h-[76px] rounded-2xl bg-surface shadow-card" />
           ))}
         </div>
-        <div className="space-y-px overflow-hidden rounded-3xl bg-white shadow-card">
+        <div className="space-y-px overflow-hidden rounded-3xl bg-surface shadow-card">
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-3 px-4 py-3.5">
               <div className="h-9 w-9 rounded-xl bg-ink-100" />

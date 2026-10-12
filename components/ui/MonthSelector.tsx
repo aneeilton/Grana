@@ -14,7 +14,7 @@ export function MonthSelector({
   const hoje = currentCompetencia();
   const ehHoje = competencia === hoje;
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-white p-1 shadow-card">
+    <div className="flex items-center justify-between rounded-2xl bg-surface p-1 shadow-card">
       <button
         onClick={() => onChange(shiftCompetencia(competencia, -1))}
         disabled={noPassado}

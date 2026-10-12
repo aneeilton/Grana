@@ -8,6 +8,7 @@ import {
   Bank,
   CalendarDots,
   Car as PhCar,
+  CaretDown as PhCaretDown,
   CaretLeft,
   CaretRight,
   Check as PhCheck,
@@ -79,6 +80,7 @@ export const BadgeCheck = wrap(SealCheck, "BadgeCheck");
 export const CalendarRange = wrap(CalendarDots, "CalendarRange");
 export const Car = wrap(PhCar, "Car");
 export const CarFront = wrap(PhCar, "CarFront");
+export const CaretDown = wrap(PhCaretDown, "CaretDown");
 export const Check = wrap(PhCheck, "Check");
 export const ChevronLeft = wrap(CaretLeft, "ChevronLeft");
 export const ChevronRight = wrap(CaretRight, "ChevronRight");

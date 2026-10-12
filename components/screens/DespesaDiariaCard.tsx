@@ -93,7 +93,7 @@ export function DespesaDiariaCard({
               aria-checked={categoria === c.id}
               onClick={() => setCategoria(c.id)}
               className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition duration-150 active:scale-95 ${
-                categoria === c.id ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-700 hover:bg-ink-200"
+                categoria === c.id ? "bg-ink-900 text-ink-50" : "bg-ink-100 text-ink-700 hover:bg-ink-200"
               }`}
             >
               <c.icon size={15} strokeWidth={2.25} aria-hidden />

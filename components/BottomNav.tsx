@@ -22,7 +22,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Seções do app"
-      className="safe-bottom sticky bottom-0 z-20 bg-[#F9F9F9]/80 shadow-bar backdrop-blur-xl backdrop-saturate-[1.8]"
+      className="safe-bottom sticky bottom-0 z-20 bg-bar/80 shadow-bar backdrop-blur-xl backdrop-saturate-[1.8]"
     >
       <ul className="flex items-stretch justify-between px-1">
         {TABS.map((tab) => {
@@ -34,7 +34,7 @@ export function BottomNav() {
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 pb-1 pt-1.5 transition active:opacity-60 ${
-                  active ? "text-accent" : "text-[#8E8E93]"
+                  active ? "text-accent" : "text-ink-400"
                 }`}
               >
                 <Icon size={26} weight={active ? "fill" : "regular"} aria-hidden />

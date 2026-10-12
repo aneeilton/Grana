@@ -69,7 +69,7 @@ export function SemestreGrid({
   function linhaItem(l: Linha) {
     return (
       <tr key={l.id} className="border-t border-ink-100">
-        <td className={`${nomeCol} max-w-[8.5rem] bg-white`}>
+        <td className={`${nomeCol} max-w-[8.5rem] bg-surface`}>
           <p className="truncate font-semibold text-ink-800">{l.nome}</p>
           {l.detalhe && <p className="caption">{l.detalhe}</p>}
         </td>
@@ -88,7 +88,7 @@ export function SemestreGrid({
   function linhaTotal(rotulo: string, valores: number[], tom: string, destaque = false) {
     return (
       <tr className={`border-t border-ink-100 ${destaque ? "bg-ink-50" : ""}`}>
-        <td className={`${nomeCol} font-bold ${tom} ${destaque ? "bg-ink-50" : "bg-white"}`}>{rotulo}</td>
+        <td className={`${nomeCol} font-bold ${tom} ${destaque ? "bg-ink-50" : "bg-surface"}`}>{rotulo}</td>
         {valores.map((v, i) => (
           <td key={i} className={`${celula} font-bold ${v < 0 ? "text-coral-500" : tom}`}>
             {formatCompact(v)}
@@ -121,7 +121,7 @@ export function SemestreGrid({
         <table className="w-full min-w-max border-separate border-spacing-0 text-xs">
           <thead>
             <tr>
-              <th className={`${nomeCol} bg-white text-[11px] font-semibold text-ink-400`}>Item</th>
+              <th className={`${nomeCol} bg-surface text-[11px] font-semibold text-ink-400`}>Item</th>
               {series.map((m) => (
                 <th
                   key={m.competencia}
@@ -152,7 +152,7 @@ export function SemestreGrid({
             {despesas.map(linhaItem)}
             {temGastos && (
               <tr className="border-t border-ink-100">
-                <td className={`${nomeCol} bg-white`}>
+                <td className={`${nomeCol} bg-surface`}>
                   <p className="font-semibold text-ink-800">Dia a dia</p>
                   <p className="caption">gastos lançados</p>
                 </td>

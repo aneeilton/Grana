@@ -415,12 +415,12 @@ export function ConsorciosScreen({
                   >
                     Lance aceito
                   </button>
-                  <button onClick={() => abrirLance(r)} className="btn bg-white text-ink-800">
+                  <button onClick={() => abrirLance(r)} className="btn bg-surface text-ink-800">
                     Editar
                   </button>
                   <button
                     onClick={() => cancelarIntencao(c)}
-                    className="btn bg-white text-ink-500"
+                    className="btn bg-surface text-ink-500"
                   >
                     Cancelar
                   </button>
@@ -512,7 +512,7 @@ export function ConsorciosScreen({
       )}
 
       {open ? (
-        <form onSubmit={criar} className="space-y-2 rounded-3xl bg-white p-4 shadow-card">
+        <form onSubmit={criar} className="space-y-2 rounded-3xl bg-surface p-4 shadow-card">
           <p className="text-[13px] font-semibold text-ink-400">Novo consórcio</p>
           <input autoFocus placeholder="Nome (ex: Carro cota 1)" value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} />
           <div className="grid grid-cols-2 gap-2">
@@ -527,7 +527,7 @@ export function ConsorciosScreen({
               type="checkbox"
               checked={contemplado}
               onChange={(e) => setContemplado(e.target.checked)}
-              className="h-5 w-5 shrink-0 rounded accent-[#007AFF]"
+              className="h-5 w-5 shrink-0 rounded accent-accent"
             />
             Já foi contemplado (já tenho o bem)
           </label>

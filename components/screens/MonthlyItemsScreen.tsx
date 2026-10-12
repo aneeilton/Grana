@@ -675,7 +675,7 @@ export function MonthlyItemsScreen({
             <button
               onClick={() => saveValor(item)}
               disabled={!dirty || state === "saving"}
-              className={`btn shrink-0 px-3.5 ${state === "saved" ? "bg-brand-100 text-brand-700" : "bg-ink-900 text-white"}`}
+              className={`btn shrink-0 px-3.5 ${state === "saved" ? "bg-brand-100 text-brand-700" : "bg-ink-900 text-ink-50"}`}
             >
               {state === "saved" && <Check size={15} strokeWidth={2.75} aria-hidden />}
               {state === "saving" ? "Salvando…" : state === "saved" ? "Salvo" : "Salvar"}
@@ -855,7 +855,7 @@ export function MonthlyItemsScreen({
         )}
 
         {open ? (
-          <form onSubmit={submitItem} className="space-y-3 rounded-3xl bg-white p-4 shadow-card">
+          <form onSubmit={submitItem} className="space-y-3 rounded-3xl bg-surface p-4 shadow-card">
             <p className="section-title">
               {editingId ? "Editar item" : tipo === "receita" ? "Nova receita" : "Nova despesa"}
             </p>
@@ -887,7 +887,7 @@ export function MonthlyItemsScreen({
                       setCartao(e.target.checked);
                       if (e.target.checked) setFixo(true);
                     }}
-                    className="h-5 w-5 shrink-0 rounded accent-[#007AFF]"
+                    className="h-5 w-5 shrink-0 rounded accent-accent"
                   />
                   É um cartão de crédito
                 </label>
@@ -909,7 +909,7 @@ export function MonthlyItemsScreen({
                 checked={fixo}
                 disabled={cartao}
                 onChange={(e) => setFixo(e.target.checked)}
-                className="h-5 w-5 shrink-0 rounded accent-[#007AFF] disabled:opacity-50"
+                className="h-5 w-5 shrink-0 rounded accent-accent disabled:opacity-50"
               />
               É {tipo === "receita" ? "uma receita" : "uma despesa"} fixa (repete todo mês)
             </label>
@@ -924,7 +924,7 @@ export function MonthlyItemsScreen({
                       setMesesSazonal([Number(competencia.slice(5, 7))]);
                     }
                   }}
-                  className="h-5 w-5 shrink-0 rounded accent-[#007AFF]"
+                  className="h-5 w-5 shrink-0 rounded accent-accent"
                 />
                 Repete só em alguns meses do ano (anual/sazonal)
               </label>
@@ -1044,7 +1044,7 @@ export function MonthlyItemsScreen({
                   type="checkbox"
                   checked={expectativa}
                   onChange={(e) => setExpectativa(e.target.checked)}
-                  className="h-5 w-5 shrink-0 rounded accent-[#007AFF]"
+                  className="h-5 w-5 shrink-0 rounded accent-accent"
                 />
                 É uma expectativa (não garantido)
               </label>

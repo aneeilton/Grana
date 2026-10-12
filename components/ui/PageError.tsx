@@ -26,7 +26,7 @@ export function PageError({ error }: { error: unknown }) {
         <OctagonAlert size={22} strokeWidth={1.75} />
       </span>
       <p className="text-[17px] font-semibold text-ink-900">Erro ao carregar essa tela</p>
-      <pre className="max-w-sm overflow-auto whitespace-pre-wrap break-words rounded-2xl bg-white p-3 text-left text-xs text-coral-500 shadow-card">
+      <pre className="max-w-sm overflow-auto whitespace-pre-wrap break-words rounded-2xl bg-surface p-3 text-left text-xs text-coral-500 shadow-card">
         {describeError(error)}
       </pre>
     </div>

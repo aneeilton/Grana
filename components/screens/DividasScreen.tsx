@@ -179,7 +179,7 @@ export function DividasScreen({
         )}
 
         {open ? (
-          <form onSubmit={handleSubmit} className="space-y-2 rounded-3xl bg-white p-4 shadow-card">
+          <form onSubmit={handleSubmit} className="space-y-2 rounded-3xl bg-surface p-4 shadow-card">
             <p className="text-[13px] font-semibold text-ink-400">
               {editingId ? "Editar dívida" : "Nova dívida"}
             </p>

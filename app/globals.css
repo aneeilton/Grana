@@ -3,6 +3,113 @@
 @tailwind utilities;
 
 @layer base {
+  /* Paleta (ver tailwind.config.ts). Canais RGB pra aceitar opacidade
+     (bg-ink-200/50). O tema segue o aparelho: claro ou escuro. */
+  :root {
+    color-scheme: light dark;
+    --c-surface: 255 255 255;
+    --c-hairline: 0 0 0;
+    --c-segment: 255 255 255;
+    --c-track: 238 238 240;
+    --c-bar: 249 249 249;
+    --c-accent: 0 122 255;
+    --c-accent-50: 238 245 255;
+    --c-accent-100: 220 235 255;
+    --c-accent-600: 0 102 214;
+    --c-accent-700: 0 89 186;
+    --c-brand-50: 235 249 238;
+    --c-brand-100: 217 244 223;
+    --c-brand-200: 179 233 192;
+    --c-brand-300: 125 217 145;
+    --c-brand-400: 76 217 100;
+    --c-brand-500: 52 199 89;
+    --c-brand-600: 36 138 61;
+    --c-brand-700: 31 122 54;
+    --c-brand-800: 25 106 45;
+    --c-brand-900: 18 79 33;
+    --c-coral-50: 255 241 240;
+    --c-coral-100: 255 227 225;
+    --c-coral-400: 255 59 48;
+    --c-coral-500: 215 0 21;
+    --c-coral-600: 196 0 18;
+    --c-coral-900: 138 0 13;
+    --c-sun-100: 255 241 222;
+    --c-sun-400: 255 149 0;
+    --c-sun-500: 178 80 0;
+    --c-grape-100: 245 235 251;
+    --c-grape-400: 175 82 222;
+    --c-grape-500: 137 68 171;
+    --c-grape-600: 137 68 171;
+    --c-grape-900: 94 45 119;
+    --c-sky-100: 224 245 248;
+    --c-sky-400: 48 176 199;
+    --c-sky-500: 0 113 164;
+    --c-sky-600: 0 113 164;
+    --c-sky-900: 0 78 114;
+    --c-ink-50: 242 242 247;
+    --c-ink-100: 233 233 238;
+    --c-ink-200: 209 209 214;
+    --c-ink-400: 110 110 115;
+    --c-ink-500: 94 94 98;
+    --c-ink-700: 58 58 60;
+    --c-ink-800: 28 28 30;
+    --c-ink-900: 0 0 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --c-surface: 28 28 30;
+      --c-hairline: 255 255 255;
+      --c-segment: 99 99 102;
+      --c-track: 44 44 46;
+      --c-bar: 22 22 24;
+      --c-accent: 10 132 255;
+      --c-accent-50: 11 29 51;
+      --c-accent-100: 16 43 76;
+      --c-accent-600: 64 156 255;
+      --c-accent-700: 100 176 255;
+      --c-brand-50: 14 38 21;
+      --c-brand-100: 18 51 28;
+      --c-brand-200: 26 77 41;
+      --c-brand-300: 36 138 61;
+      --c-brand-400: 48 209 88;
+      --c-brand-500: 48 209 88;
+      --c-brand-600: 36 138 61;
+      --c-brand-700: 48 209 88;
+      --c-brand-800: 91 224 122;
+      --c-brand-900: 166 240 183;
+      --c-coral-50: 46 15 13;
+      --c-coral-100: 61 20 17;
+      --c-coral-400: 255 69 58;
+      --c-coral-500: 255 69 58;
+      --c-coral-600: 255 105 97;
+      --c-coral-900: 255 180 175;
+      --c-sun-100: 58 38 8;
+      --c-sun-400: 255 159 10;
+      --c-sun-500: 255 179 64;
+      --c-grape-100: 42 22 54;
+      --c-grape-400: 191 90 242;
+      --c-grape-500: 164 79 207;
+      --c-grape-600: 191 90 242;
+      --c-grape-900: 233 194 255;
+      --c-sky-100: 12 42 48;
+      --c-sky-400: 64 200 224;
+      --c-sky-500: 31 143 191;
+      --c-sky-600: 90 200 245;
+      --c-sky-900: 191 239 255;
+      --c-ink-50: 0 0 0;
+      --c-ink-100: 44 44 46;
+      --c-ink-200: 58 58 60;
+      --c-ink-400: 152 152 159;
+      --c-ink-500: 174 174 178;
+      --c-ink-700: 209 209 214;
+      --c-ink-800: 229 229 234;
+      --c-ink-900: 255 255 255;
+    }
+  }
+}
+
+
+@layer base {
   html {
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
@@ -60,12 +167,12 @@
   }
   /* "+ Adicionar": ação de criar no fim das listas */
   .btn-add {
-    @apply btn w-full bg-white text-accent shadow-card hover:bg-accent-50;
+    @apply btn w-full bg-surface text-accent shadow-card hover:bg-accent-50;
   }
 
   /* ---- campos: 16px evita o zoom automático do Safari no iPhone ---- */
   .field {
-    @apply min-h-11 w-full rounded-xl border border-ink-200 bg-white px-3.5 text-base text-ink-900 outline-none transition duration-150 placeholder:text-ink-400 focus:border-accent focus:ring-4 focus:ring-accent/15;
+    @apply min-h-11 w-full rounded-xl border border-ink-200 bg-surface px-3.5 text-base text-ink-900 outline-none transition duration-150 placeholder:text-ink-400 focus:border-accent focus:ring-4 focus:ring-accent/15;
   }
   .field-label {
     @apply block px-0.5 pb-1 text-[13px] font-medium text-ink-500;

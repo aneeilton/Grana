@@ -10,7 +10,7 @@ export function Card({
   onClick?: () => void;
 }) {
   return (
-    <div className={`rounded-3xl bg-white p-4 shadow-card ${className}`} onClick={onClick}>
+    <div className={`rounded-3xl bg-surface p-4 shadow-card ${className}`} onClick={onClick}>
       {children}
     </div>
   );
@@ -26,7 +26,7 @@ export function EmptyState({
   hint?: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-3xl bg-white px-6 py-10 text-center shadow-card">
+    <div className="flex flex-col items-center gap-2 rounded-3xl bg-surface px-6 py-10 text-center shadow-card">
       <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink-100 text-ink-500">
         <Icon size={22} strokeWidth={1.75} aria-hidden />
       </span>
