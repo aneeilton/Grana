@@ -63,7 +63,7 @@ export function SemestreGrid({
 
   const temGastos = series.some((m) => m.gastosDiarios > 0);
 
-  const celula = "px-2 py-1.5 text-right [font-variant-numeric:tabular-nums] whitespace-nowrap";
+  const celula = "px-2 py-1.5 text-right whitespace-nowrap";
   const nomeCol = "sticky left-0 z-10 px-2 py-1.5 text-left";
 
   function linhaItem(l: Linha) {
@@ -71,13 +71,13 @@ export function SemestreGrid({
       <tr key={l.id} className="border-t border-ink-100">
         <td className={`${nomeCol} max-w-[8.5rem] bg-white`}>
           <p className="truncate font-semibold text-ink-800">{l.nome}</p>
-          {l.detalhe && <p className="text-[10px] text-ink-400">{l.detalhe}</p>}
+          {l.detalhe && <p className="caption">{l.detalhe}</p>}
         </td>
         {l.valores.map((v, i) => (
           <td key={i} className={`${celula} ${v ? "text-ink-700" : "text-ink-400/50"}`}>
             {v ? formatCompact(v) : "—"}
             {v && l.parcelas[i] ? (
-              <span className="block text-[9px] font-semibold text-ink-400">{l.parcelas[i]}</span>
+              <span className="block text-[11px] font-semibold text-ink-400">{l.parcelas[i]}</span>
             ) : null}
           </td>
         ))}
@@ -103,7 +103,7 @@ export function SemestreGrid({
       <tr>
         <td
           colSpan={series.length + 1}
-          className={`sticky left-0 px-2 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wide ${tom}`}
+          className={`sticky left-0 px-2 pb-1 pt-3 text-[13px] font-semibold ${tom}`}
         >
           {rotulo}
         </td>
@@ -114,8 +114,8 @@ export function SemestreGrid({
   return (
     <Card className="px-0 pb-2">
       <div className="mb-1 px-4">
-        <p className="text-sm font-bold text-ink-800">Item a item</p>
-        <p className="text-[11px] text-ink-400">Valores em R$ · arraste para o lado para ver todos os meses</p>
+        <p className="text-[17px] font-semibold text-ink-900">Item a item</p>
+        <p className="caption">Valores em R$ · arraste para o lado para ver todos os meses</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-max border-separate border-spacing-0 text-xs">
@@ -135,7 +135,7 @@ export function SemestreGrid({
                 >
                   {monthLabel(m.competencia)}
                   {m.competencia === criticoCompetencia && (
-                    <span className="block text-[9px] font-bold uppercase">menor saldo</span>
+                    <span className="block text-[11px] font-semibold">menor saldo</span>
                   )}
                 </th>
               ))}
@@ -154,7 +154,7 @@ export function SemestreGrid({
               <tr className="border-t border-ink-100">
                 <td className={`${nomeCol} bg-white`}>
                   <p className="font-semibold text-ink-800">Dia a dia</p>
-                  <p className="text-[10px] text-ink-400">gastos lançados</p>
+                  <p className="caption">gastos lançados</p>
                 </td>
                 {series.map((m) => (
                   <td key={m.competencia} className={`${celula} ${m.gastosDiarios ? "text-ink-700" : "text-ink-400/50"}`}>

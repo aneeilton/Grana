@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CalendarRange, TriangleAlert } from "lucide-react";
 import { TopHeader } from "@/components/TopHeader";
-import { Card } from "@/components/ui/Card";
+import { Card, SectionHeader } from "@/components/ui/Card";
+import { SummaryCard } from "@/components/ui/SummaryCard";
 import { SemestreGrid } from "@/components/screens/SemestreGrid";
 import { SimuladorCard } from "@/components/screens/SimuladorCard";
 import { buildMonthlyProjection, mesCritico } from "@/lib/projection";
@@ -49,77 +50,101 @@ export function SemestreScreen({
     <div>
       <TopHeader icon={CalendarRange} title="Semestre" subtitle="Próximos 6 meses" />
 
-      <div className="space-y-4 px-4 pt-1">
-        <Card className="bg-gradient-to-br from-grape-500 to-grape-900 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-            Saldo previsto em {monthLabel(series[series.length - 1]?.competencia ?? "")}
-          </p>
-          <p className="mt-1 text-3xl font-extrabold [font-variant-numeric:tabular-nums]">
-            {formatMoney(fechamentoFinal)}
-          </p>
-          <p className="mt-1 text-xs text-white/70">
-            A partir do saldo atual de {formatMoney(saldoAtual)}
-          </p>
-        </Card>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-brand-50 text-brand-700">
-            <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
-              Receitas previstas
-            </p>
-            <p className="text-lg font-extrabold">{formatMoney(receitaTotal)}</p>
-          </Card>
-          <Card className="bg-coral-500/10 text-coral-500">
-            <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
-              Despesas previstas
-            </p>
-            <p className="text-lg font-extrabold">{formatMoney(despesaTotal)}</p>
-          </Card>
-        </div>
+      <div className="space-y-6 px-4 pt-1">
+        <SummaryCard
+          tone="grape"
+          title={`Saldo previsto em ${monthYearLabel(series[series.length - 1]?.competencia ?? "")}`}
+          value={formatMoney(fechamentoFinal)}
+          subtitle={`A partir do saldo atual de ${formatMoney(saldoAtual)}`}
+        >
+          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/15 pt-3">
+            <div className="min-w-0">
+              <dt className="text-[13px] font-medium text-white/75">Receitas previstas</dt>
+              <dd className="truncate text-[15px] font-semibold">{formatMoney(receitaTotal)}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-[13px] font-medium text-white/75">Despesas previstas</dt>
+              <dd className="truncate text-[15px] font-semibold">{formatMoney(despesaTotal)}</dd>
+            </div>
+          </dl>
+        </SummaryCard>
 
         {critico && (
-          <Card
-            className={`flex items-start gap-3 ${
-              critico.saldoFinal < 0 ? "bg-coral-500/10 text-coral-500" : "bg-sun-500/10 text-sun-500"
-            }`}
+          <div
+            role={critico.saldoFinal < 0 ? "alert" : undefined}
+            className={`flex items-start gap-3 rounded-2xl p-4 ${critico.saldoFinal < 0 ? "bg-coral-100" : "bg-sun-100"}`}
           >
-            <TriangleAlert size={18} strokeWidth={2.25} className="mt-0.5 shrink-0" />
-            <div>
-              <p className="text-xs font-bold">Mês mais apertado: {monthYearLabel(critico.competencia)}</p>
-              <p className="text-[11px] text-ink-500">
+            <TriangleAlert
+              size={20}
+              strokeWidth={2.25}
+              className={`mt-0.5 shrink-0 ${critico.saldoFinal < 0 ? "text-coral-500" : "text-sun-500"}`}
+              aria-hidden
+            />
+            <div className="min-w-0">
+              <p className={`text-[15px] font-semibold ${critico.saldoFinal < 0 ? "text-coral-500" : "text-sun-500"}`}>
+                Mês mais apertado: {monthYearLabel(critico.competencia)}
+              </p>
+              <p className="mt-0.5 text-[13px] text-ink-700">
                 {critico.saldoFinal < 0
                   ? `Fecha no vermelho, com ${formatMoney(critico.saldoFinal)}. É o mês para se planejar primeiro.`
                   : `Menor saldo previsto do semestre: ${formatMoney(critico.saldoFinal)} no fim do mês.`}
               </p>
             </div>
-          </Card>
+          </div>
         )}
 
-        <Card>
-          <p className="mb-2 text-sm font-bold text-ink-800">Saldo previsto por mês</p>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 11, fill: "#8B9995" }}
+        <section>
+          <SectionHeader title="Saldo previsto por mês" />
+          <Card>
+            <div className="h-44" role="img" aria-label="Gráfico do saldo previsto no fim de cada mês do semestre">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#5F706C", fontFamily: "var(--font-sans)" }}
+                  />
+                  <YAxis hide />
+                  <Tooltip
+                    cursor={{ fill: "rgba(18, 25, 23, 0.04)", radius: 8 }}
+                    formatter={(value: number) => [formatMoney(value), "Saldo"]}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "none",
+                      boxShadow: "0 6px 18px -10px rgba(18,25,23,0.3)",
+                      fontFamily: "var(--font-sans)",
+                      fontSize: 13,
+                    }}
+                  />
+                  <Bar dataKey="saldo" radius={[8, 8, 8, 8]} maxBarSize={36}>
+                    {series.map((s) => (
+                      <Cell
+                        key={s.competencia}
+                        fill={
+                          s.competencia === critico?.competencia
+                            ? s.saldoFinal < 0
+                              ? "#E91644"
+                              : "#E8B500"
+                            : "#8E20B6"
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            {critico && (
+              <p className="caption mt-2 flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className={`h-2 w-2 rounded-full ${critico.saldoFinal < 0 ? "bg-coral-500" : "bg-[#E8B500]"}`}
                 />
-                <YAxis hide />
-                <Tooltip formatter={(value: number) => formatMoney(value)} />
-                <Bar dataKey="saldo" radius={[8, 8, 8, 8]}>
-                  {series.map((s) => (
-                    <Cell
-                      key={s.competencia}
-                      fill={s.competencia === critico?.competencia ? (s.saldoFinal < 0 ? "#E91644" : "#FFD23F") : "#8E20B6"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
+                Mês mais apertado em destaque
+              </p>
+            )}
+          </Card>
+        </section>
 
         <SimuladorCard items={items} lancamentos={lancamentos} series={series} />
 

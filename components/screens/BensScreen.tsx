@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Gem, X } from "lucide-react";
+import { Gem, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
@@ -84,6 +84,8 @@ export function BensScreen({
   }
 
   async function removeBem(id: string) {
+    const alvo = bens.find((b) => b.id === id);
+    if (!window.confirm(`Excluir o bem "${alvo?.nome ?? ""}"?`)) return;
     setBens((prev) => prev.filter((b) => b.id !== id));
     await supabase.from("bens").delete().eq("id", id);
   }
@@ -91,14 +93,14 @@ export function BensScreen({
   return (
     <div>
       {hideHeader ? (
-        <p className="px-4 pb-2 text-sm text-ink-500">
+        <p className="sr-only">
           Total · <span className="font-bold text-ink-800">{formatMoney(total)}</span>
         </p>
       ) : (
         <TopHeader icon={Gem} title="Bens" subtitle={`Total ${formatMoney(total)}`} />
       )}
 
-      <div className="space-y-4 px-4 pt-4">
+      <div className="space-y-4 px-4 pt-1">
         {bens.length === 0 ? (
           <EmptyState icon={Gem} title="Nenhum bem cadastrado" hint="Casa, carro, eletrônicos..." />
         ) : (
@@ -111,16 +113,16 @@ export function BensScreen({
               >
                 <p className="font-semibold text-ink-800">{bem.nome}</p>
                 <div className="flex items-center gap-3">
-                  <p className="font-extrabold text-grape-500">{formatMoney(Number(bem.valor))}</p>
+                  <p className="font-bold text-grape-500">{formatMoney(Number(bem.valor))}</p>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       removeBem(bem.id);
                     }}
-                    className="text-ink-400 hover:text-coral-500"
+                    className="icon-btn hover:text-coral-500"
                     aria-label="Remover bem"
                   >
-                    <X size={16} strokeWidth={2.25} />
+                    <Trash2 size={17} strokeWidth={2} aria-hidden />
                   </button>
                 </div>
               </Card>
@@ -130,7 +132,7 @@ export function BensScreen({
 
         {open ? (
           <form onSubmit={handleSubmit} className="space-y-2 rounded-3xl bg-white p-4 shadow-card">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-400">
+            <p className="text-[13px] font-semibold text-ink-400">
               {editingId ? "Editar bem" : "Novo bem"}
             </p>
             <input
@@ -138,7 +140,7 @@ export function BensScreen({
               placeholder="Nome do bem"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+              className="field"
             />
             <input
               type="number"
@@ -146,21 +148,21 @@ export function BensScreen({
               placeholder="Valor estimado"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+              className="field"
             />
             {error && <p className="text-xs font-medium text-coral-500">Erro: {error}</p>}
             <div className="flex gap-2 pt-1">
               <button
                 type="button"
                 onClick={closeForm}
-                className="flex-1 rounded-2xl bg-ink-100 py-2.5 text-sm font-semibold text-ink-700"
+                className="btn-secondary flex-1"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                className="btn-primary flex-1"
               >
                 Salvar
               </button>
@@ -169,7 +171,7 @@ export function BensScreen({
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="w-full rounded-2xl border-2 border-dashed border-brand-300 py-3 text-sm font-bold text-brand-600"
+            className="btn-add border-brand-300 text-brand-600"
           >
             + Adicionar bem
           </button>

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Landmark, FileWarning, Gem } from "lucide-react";
 import { TopHeader } from "@/components/TopHeader";
-import { Card } from "@/components/ui/Card";
+import { SummaryCard } from "@/components/ui/SummaryCard";
+import { Segmented } from "@/components/ui/Segmented";
 import { ContasScreen } from "@/components/screens/ContasScreen";
 import { DividasScreen } from "@/components/screens/DividasScreen";
 import { BensScreen } from "@/components/screens/BensScreen";
@@ -52,30 +53,32 @@ export function PatrimonioScreen({
       <TopHeader icon={Landmark} title="Patrimônio" />
 
       <div className="space-y-4 px-4 pt-1">
-        <Card className="bg-gradient-to-br from-brand-600 to-brand-900 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-            Patrimônio líquido
-          </p>
-          <p className="mt-1 text-3xl font-extrabold [font-variant-numeric:tabular-nums]">
-            {formatMoney(patrimonioLiquido)}
-          </p>
-          <p className="mt-1 text-xs text-white/70">Contas + aplicado + bens − dívidas</p>
-        </Card>
+        <SummaryCard
+          tone="brand"
+          title="Patrimônio líquido"
+          value={formatMoney(patrimonioLiquido)}
+          subtitle="Contas + aplicado + bens − dívidas"
+        >
+          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/15 pt-3">
+            <div className="min-w-0">
+              <dt className="text-[13px] font-medium text-white/75">Contas e aplicado</dt>
+              <dd className="truncate text-[15px] font-semibold">
+                {formatMoney(contasTotal.corrente + contasTotal.aplicado)}
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-[13px] font-medium text-white/75">Dívidas</dt>
+              <dd className="truncate text-[15px] font-semibold">{formatMoney(dividasTotal + dividaConsorcio)}</dd>
+            </div>
+          </dl>
+        </SummaryCard>
 
-        <div className="flex gap-1.5">
-          {ABAS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setAba(item.id)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-2.5 text-xs font-bold transition ${
-                aba === item.id ? "bg-ink-800 text-white shadow-card" : "bg-ink-100 text-ink-500"
-              }`}
-            >
-              <item.icon size={14} strokeWidth={2.25} />
-              {item.label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Visão do patrimônio"
+          value={aba}
+          onChange={setAba}
+          options={ABAS.map((a) => ({ value: a.id, label: a.label }))}
+        />
       </div>
 
       {/* Mantidas sempre montadas (so escondidas via CSS): desmontar a

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileWarning, PartyPopper, X } from "lucide-react";
+import { FileWarning, PartyPopper, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
@@ -96,6 +96,8 @@ export function DividasScreen({
   }
 
   async function removeDivida(id: string) {
+    const alvo = dividas.find((d) => d.id === id);
+    if (!window.confirm(`Excluir a dívida "${alvo?.nome ?? ""}"?`)) return;
     setDividas((prev) => prev.filter((d) => d.id !== id));
     await supabase.from("dividas").delete().eq("id", id);
   }
@@ -103,7 +105,7 @@ export function DividasScreen({
   return (
     <div>
       {hideHeader ? (
-        <p className="px-4 pb-2 text-sm text-ink-500">
+        <p className="sr-only">
           Total · <span className="font-bold text-ink-800">{formatMoney(totalCurto + totalLongo + dividaConsorcio)}</span>
         </p>
       ) : (
@@ -114,23 +116,23 @@ export function DividasScreen({
         />
       )}
 
-      <div className="space-y-4 px-4 pt-4">
+      <div className="space-y-4 px-4 pt-1">
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-coral-500/10 text-coral-500">
-            <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
+          <Card className="p-3.5">
+            <p className="text-[13px] font-medium text-ink-500">
               Curto prazo
             </p>
-            <p className="text-lg font-extrabold">{formatMoney(totalCurto)}</p>
+            <p className="mt-0.5 text-[17px] font-bold text-ink-900">{formatMoney(totalCurto)}</p>
           </Card>
-          <Card className="bg-sun-500/10 text-sun-500">
-            <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
+          <Card className="p-3.5">
+            <p className="text-[13px] font-medium text-ink-500">
               Longo prazo
             </p>
-            <p className="text-lg font-extrabold">{formatMoney(totalLongo + dividaConsorcio)}</p>
+            <p className="mt-0.5 text-[17px] font-bold text-ink-900">{formatMoney(totalLongo + dividaConsorcio)}</p>
           </Card>
         </div>
         {dividaConsorcio > 0 && (
-          <p className="px-1 text-[11px] text-ink-500">
+          <p className="caption px-1">
             Longo prazo inclui {formatMoney(dividaConsorcio)} de consórcio contemplado (parcelas em aberto),
             calculado automaticamente na aba Fluxo → Consórcio.
           </p>
@@ -149,7 +151,7 @@ export function DividasScreen({
                 <div>
                   <p className="font-semibold text-ink-800">{divida.nome}</p>
                   <span
-                    className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                    className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                       divida.tipo === "curto"
                         ? "bg-coral-500/10 text-coral-500"
                         : "bg-sun-500/10 text-sun-500"
@@ -159,16 +161,16 @@ export function DividasScreen({
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <p className="font-extrabold text-ink-800">{formatMoney(Number(divida.valor))}</p>
+                  <p className="font-bold text-ink-800">{formatMoney(Number(divida.valor))}</p>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       removeDivida(divida.id);
                     }}
-                    className="text-ink-400 hover:text-coral-500"
+                    className="icon-btn hover:text-coral-500"
                     aria-label="Remover dívida"
                   >
-                    <X size={16} strokeWidth={2.25} />
+                    <Trash2 size={17} strokeWidth={2} aria-hidden />
                   </button>
                 </div>
               </Card>
@@ -178,7 +180,7 @@ export function DividasScreen({
 
         {open ? (
           <form onSubmit={handleSubmit} className="space-y-2 rounded-3xl bg-white p-4 shadow-card">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-400">
+            <p className="text-[13px] font-semibold text-ink-400">
               {editingId ? "Editar dívida" : "Nova dívida"}
             </p>
             <input
@@ -186,7 +188,7 @@ export function DividasScreen({
               placeholder="Nome da dívida"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+              className="field"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -195,12 +197,12 @@ export function DividasScreen({
                 placeholder="Valor"
                 value={valor}
                 onChange={(e) => setValor(e.target.value)}
-                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                className="field"
               />
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as DividaTipo)}
-                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                className="field"
               >
                 <option value="curto">Curto prazo</option>
                 <option value="longo">Longo prazo</option>
@@ -211,14 +213,14 @@ export function DividasScreen({
               <button
                 type="button"
                 onClick={closeForm}
-                className="flex-1 rounded-2xl bg-ink-100 py-2.5 text-sm font-semibold text-ink-700"
+                className="btn-secondary flex-1"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                className="btn-primary flex-1"
               >
                 Salvar
               </button>
@@ -227,7 +229,7 @@ export function DividasScreen({
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="w-full rounded-2xl border-2 border-dashed border-brand-300 py-3 text-sm font-bold text-brand-600"
+            className="btn-add border-brand-300 text-brand-600"
           >
             + Adicionar dívida
           </button>

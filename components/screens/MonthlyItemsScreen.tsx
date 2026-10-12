@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, CreditCard, Pencil, Receipt, Repeat, TrendingUp, Wallet, X } from "lucide-react";
+import { Check, CreditCard, Pencil, Receipt, Repeat, Trash2, TrendingUp, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
+import { SummaryCard } from "@/components/ui/SummaryCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel, shiftCompetencia } from "@/lib/format";
 import { ehSazonal, ocorreNoMes, valoresEfetivosPorItem } from "@/lib/projection";
@@ -412,6 +413,14 @@ export function MonthlyItemsScreen({
   }
 
   async function removeItem(id: string) {
+    // Exclusão não tem desfazer: confirma antes, dizendo o que vai junto.
+    const alvo = items.find((i) => i.id === id);
+    const qtdCompras = compras.get(id)?.length ?? 0;
+    const aviso =
+      `Excluir "${alvo?.nome ?? "item"}"?` +
+      (qtdCompras ? `\n\nAs ${qtdCompras} compras/parcelas lançadas nesse cartão também serão excluídas.` : "") +
+      "\n\nTodos os valores lançados dele somem dos meses e da projeção.";
+    if (!window.confirm(aviso)) return;
     // Apagar um cartão apaga junto as compras ligadas a ele (cascade no banco).
     const removidos = new Set([id, ...(compras.get(id) ?? []).map((c) => c.id)]);
     setItems((prev) => prev.filter((i) => !removidos.has(i.id)));
@@ -610,169 +619,144 @@ export function MonthlyItemsScreen({
     const uso = item.cartao && item.limite ? Math.min(1, valorFaturaAtual / item.limite) : null;
     const usoCor =
       uso === null ? "" : uso >= 0.9 ? "bg-coral-500" : uso >= 0.7 ? "bg-sun-500" : "bg-brand-600";
+    const meta = [
+      showDia && item.dia_vencimento ? `Vence dia ${item.dia_vencimento}` : null,
+      showExpectativa && item.expectativa ? "Expectativa" : null,
+      ehSazonal(item)
+        ? `${item.meses_recorrencia!.length === 1 ? "Anual" : "Sazonal"}: ${item.meses_recorrencia!
+            .map((m) => MESES_ANO[m - 1])
+            .join(", ")}`
+        : null,
+      item.parcelas_total ? `Parcela ${rotuloParcela(item, todosLancamentos, competencia) ?? `de ${item.parcelas_total}`}` : null,
+    ].filter(Boolean);
+    const chip = item.cartao ? "bg-grape-100 text-grape-500" : tones.chip;
     return (
       <Card key={item.id}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${tones.chip}`}>
-              <ItemIcon size={16} strokeWidth={2} />
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${chip}`}>
+              <ItemIcon size={18} strokeWidth={2} aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="truncate font-semibold text-ink-800">{item.nome}</p>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {showDia && item.dia_vencimento && (
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${tones.chip}`}>
-                    Vence dia {item.dia_vencimento}
-                  </span>
-                )}
-                {showExpectativa && item.expectativa && (
-                  <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold text-ink-500">
-                    Expectativa
-                  </span>
-                )}
-                {ehSazonal(item) && (
-                  <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-500">
-                    {item.meses_recorrencia!.length === 1 ? "Anual" : "Sazonal"} ·{" "}
-                    {item.meses_recorrencia!.map((m) => MESES_ANO[m - 1]).join(", ")}
-                  </span>
-                )}
-                {item.parcelas_total && (
-                  <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold text-ink-500">
-                    {rotuloParcela(item, todosLancamentos, competencia) ?? `${item.parcelas_total}x`}
-                  </span>
-                )}
-              </div>
+              <p className="truncate text-[15px] font-semibold text-ink-900">{item.nome}</p>
+              {meta.length > 0 && <p className="caption truncate">{meta.join(" · ")}</p>}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              onClick={() => startEdit(item)}
-              className="text-ink-400 hover:text-brand-600"
-              aria-label="Editar"
-            >
-              <Pencil size={15} strokeWidth={2.25} />
+          <div className="flex shrink-0 items-center gap-1 pr-1 pt-1">
+            <button onClick={() => startEdit(item)} className="icon-btn hover:text-brand-700" aria-label={`Editar ${item.nome}`}>
+              <Pencil size={17} strokeWidth={2} aria-hidden />
             </button>
-            <button
-              onClick={() => removeItem(item.id)}
-              className="text-ink-400 hover:text-coral-500"
-              aria-label="Remover"
-            >
-              <X size={16} strokeWidth={2.25} />
+            <button onClick={() => removeItem(item.id)} className="icon-btn hover:text-coral-500" aria-label={`Remover ${item.nome}`}>
+              <Trash2 size={17} strokeWidth={2} aria-hidden />
             </button>
           </div>
         </div>
 
         <div className="mt-3 flex items-center gap-2">
-          <input
-            type="number"
-            step="0.01"
-            inputMode="decimal"
-            value={drafts[item.id] ?? ""}
-            placeholder={comprasDoCartao.length > 0 ? "Outros gastos do cartão" : "0,00"}
-            onChange={(e) =>
-              setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))
-            }
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveValor(item);
-            }}
-            className={`w-full rounded-xl border border-ink-100 bg-ink-50 px-3 py-2 text-sm font-bold outline-none focus:border-brand-400 ${tones.value}`}
-          />
-          <button
-            onClick={() => saveValor(item)}
-            disabled={!dirty || state === "saving"}
-            className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold transition ${
-              state === "saved"
-                ? "bg-brand-600 text-white"
-                : dirty
-                  ? "bg-ink-800 text-white"
-                  : "bg-ink-100 text-ink-400"
-            }`}
-          >
-            {state === "saved" && <Check size={13} strokeWidth={2.5} />}
-            {state === "saving" ? "Salvando..." : state === "saved" ? "Salvo" : "Salvar"}
-          </button>
+          <label className="relative min-w-0 flex-1">
+            <span className="sr-only">Valor de {item.nome} em {monthLabel(competencia)}</span>
+            <span aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-ink-400">
+              R$
+            </span>
+            <input
+              type="number"
+              step="0.01"
+              inputMode="decimal"
+              value={drafts[item.id] ?? ""}
+              placeholder={comprasDoCartao.length > 0 ? "outros gastos" : "0,00"}
+              onChange={(e) => setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveValor(item);
+              }}
+              className={`field pl-10 font-semibold ${tones.value}`}
+            />
+          </label>
+          {(dirty || state !== "idle") && (
+            <button
+              onClick={() => saveValor(item)}
+              disabled={!dirty || state === "saving"}
+              className={`btn shrink-0 px-3.5 ${state === "saved" ? "bg-brand-100 text-brand-700" : "bg-ink-900 text-white"}`}
+            >
+              {state === "saved" && <Check size={15} strokeWidth={2.75} aria-hidden />}
+              {state === "saving" ? "Salvando…" : state === "saved" ? "Salvo" : "Salvar"}
+            </button>
+          )}
           <button
             onClick={() => togglePago(item)}
-            className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold transition ${
-              lanc?.pago
-                ? "bg-brand-600 text-white"
-                : "bg-ink-100 text-ink-500"
-            }`}
+            aria-pressed={!!lanc?.pago}
+            className={`status-pill min-h-11 ${lanc?.pago ? "bg-brand-600 text-white" : "bg-sun-100 text-sun-500"}`}
           >
-            {lanc?.pago && <Check size={13} strokeWidth={2.5} />}
+            {lanc?.pago && <Check size={15} strokeWidth={2.75} aria-hidden />}
             {lanc?.pago ? valueDoneLabel : "Pendente"}
           </button>
         </div>
+
         {uso !== null && (
-          <div className="mt-2">
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
-              <div className={`h-full rounded-full ${usoCor}`} style={{ width: `${uso * 100}%` }} />
+          <div className="mt-3">
+            <div
+              className="h-1.5 w-full overflow-hidden rounded-full bg-ink-100"
+              role="progressbar"
+              aria-label="Uso do limite"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(uso * 100)}
+            >
+              <div className={`h-full rounded-full transition-[width] duration-500 ease-out-expo ${usoCor}`} style={{ width: `${uso * 100}%` }} />
             </div>
-            <p className="mt-1 text-[11px] text-ink-400">
-              {Math.round(uso * 100)}% do limite ({formatMoney(item.limite ?? 0)})
+            <p className="caption mt-1.5">
+              {Math.round(uso * 100)}% do limite de {formatMoney(item.limite ?? 0)}
               {comprasDoCartao.length > 0 && " · inclui parcelas a vencer"}
             </p>
           </div>
         )}
+
         {comprasNoMes.length > 0 && (
-          <div className="mt-3 space-y-1.5 border-t border-ink-100 pt-2.5">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-ink-400">
-              Parcelas e compras nesta fatura
-            </p>
-            {comprasNoMes.map(({ compra, valor }) => {
-              const parcela = rotuloParcela(compra, todosLancamentos, competencia);
-              return (
-                <div key={compra.id} className="flex items-center justify-between gap-2 text-sm">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <p className={`truncate font-semibold ${lancamentos[compra.id]?.pago ? "text-ink-400" : "text-ink-700"}`}>
-                      {compra.nome}
-                    </p>
-                    {parcela && (
-                      <span className="shrink-0 rounded-full bg-ink-100 px-1.5 py-0.5 text-[10px] font-bold text-ink-500">
-                        {parcela}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className={`font-bold [font-variant-numeric:tabular-nums] ${tones.value}`}>
-                      {formatMoney(valor)}
-                    </span>
-                    <button
-                      onClick={() => startEdit(compra)}
-                      className="text-ink-400 hover:text-brand-600"
-                      aria-label={`Editar ${compra.nome}`}
-                    >
-                      <Pencil size={13} strokeWidth={2.25} />
-                    </button>
-                    <button
-                      onClick={() => removeItem(compra.id)}
-                      className="text-ink-400 hover:text-coral-500"
-                      aria-label={`Remover ${compra.nome}`}
-                    >
-                      <X size={14} strokeWidth={2.25} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            <div className="flex items-center justify-between border-t border-dashed border-ink-100 pt-1.5 text-xs">
-              <span className="text-ink-500">
-                Fatura prevista (outros gastos + {formatMoney(totalComprasMes)} em parcelas)
-              </span>
-              <span className="font-extrabold text-ink-800 [font-variant-numeric:tabular-nums]">
+          <div className="mt-4 border-t border-ink-100 pt-3">
+            <p className="group-label px-0 pb-1">Parcelas e compras nesta fatura</p>
+            <ul className="divide-y divide-ink-100">
+              {comprasNoMes.map(({ compra, valor }) => {
+                const parcela = rotuloParcela(compra, todosLancamentos, competencia);
+                return (
+                  <li key={compra.id} className="flex min-h-11 items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p
+                        className={`truncate text-[15px] ${
+                          lancamentos[compra.id]?.pago ? "text-ink-400 line-through decoration-ink-200" : "text-ink-800"
+                        }`}
+                      >
+                        {compra.nome}
+                      </p>
+                      {parcela && <p className="caption">Parcela {parcela}</p>}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-[15px] font-semibold text-ink-900">{formatMoney(valor)}</span>
+                      <button onClick={() => startEdit(compra)} className="icon-btn hover:text-brand-700" aria-label={`Editar ${compra.nome}`}>
+                        <Pencil size={16} strokeWidth={2} aria-hidden />
+                      </button>
+                      <button onClick={() => removeItem(compra.id)} className="icon-btn hover:text-coral-500" aria-label={`Remover ${compra.nome}`}>
+                        <Trash2 size={16} strokeWidth={2} aria-hidden />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-1 flex items-center justify-between gap-3 border-t border-ink-200 pt-2.5">
+              <span className="caption">Fatura prevista · outros gastos + {formatMoney(totalComprasMes)} em parcelas</span>
+              <span className="shrink-0 text-[15px] font-bold text-ink-900">
                 {formatMoney(Number(drafts[item.id] || 0) + totalComprasMes)}
               </span>
             </div>
           </div>
         )}
         {inferido && (
-          <p className="mt-1.5 text-[11px] text-ink-400">
-            Repete automaticamente o último valor lançado{ehSazonal(item) ? " (da última vez que ocorreu)" : ""} · só mexa se o valor mudar
+          <p className="caption mt-2">
+            Repete o último valor lançado{ehSazonal(item) ? " (da última vez que ocorreu)" : ""}. Só mexa se mudou.
           </p>
         )}
         {saveErrors[item.id] && (
-          <p className="mt-1.5 text-xs font-medium text-coral-500">
-            Erro ao salvar: {saveErrors[item.id]}
+          <p role="alert" className="mt-2 text-[13px] font-medium text-coral-500">
+            Não foi possível salvar: {saveErrors[item.id]}
           </p>
         )}
       </Card>
@@ -793,99 +777,77 @@ export function MonthlyItemsScreen({
         <MonthSelector competencia={competencia} onChange={setCompetencia} minCompetencia={MES_INICIAL} />
 
         {resumoMes.linhas.length > 0 && (
-          <Card
-            className={`bg-gradient-to-br text-white ${
-              tipo === "receita" ? "from-brand-600 to-brand-900" : "from-coral-500 to-[#7A0B24]"
-            }`}
-          >
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-              {tipo === "receita" ? "Receitas" : "Despesas"} de {monthYearLabel(competencia)}
-            </p>
-            <p className="mt-1 text-3xl font-extrabold [font-variant-numeric:tabular-nums]">{formatMoney(resumoMes.total)}</p>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/20">
-              <div
-                className="h-full rounded-full bg-white/80"
-                style={{ width: `${resumoMes.total > 0 ? Math.min(100, (resumoMes.feito / resumoMes.total) * 100) : 0}%` }}
-              />
-            </div>
-            <p className="mt-2 text-sm font-semibold text-white/90">
-              {formatMoney(resumoMes.feito)} {valueDoneLabel.toLowerCase()}s ·{" "}
-              {resumoMes.total > 0 ? Math.round((resumoMes.feito / resumoMes.total) * 100) : 0}% · falta {formatMoney(resumoMes.total - resumoMes.feito)}
-            </p>
-
-            <div className="mt-4 border-t border-white/15 pt-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-                Por {tipo === "receita" ? "receita" : "despesa"} no mês
-              </p>
-              <div className="mt-1.5 space-y-1.5">
-                {resumoMes.linhas.map((l) => (
-                  <div key={l.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className={`flex min-w-0 items-center gap-1.5 ${l.feito ? "text-white/60" : "text-white/90"}`}>
-                      {l.feito && <Check size={13} strokeWidth={2.5} className="shrink-0" />}
-                      <span className="truncate">{l.nome}</span>
-                    </span>
-                    <span
-                      className={`shrink-0 font-bold [font-variant-numeric:tabular-nums] ${l.feito ? "text-white/60" : ""}`}
-                    >
-                      {formatMoney(l.valor)}
-                    </span>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between gap-3 border-t border-white/15 pt-1.5 text-sm">
-                  <span className="font-semibold text-white/80">Total do mês</span>
-                  <span className="shrink-0 font-extrabold [font-variant-numeric:tabular-nums]">{formatMoney(resumoMes.total)}</span>
-                </div>
-              </div>
-            </div>
-          </Card>
+          <SummaryCard
+            tone={tipo === "receita" ? "brand" : "coral"}
+            title={`${tipo === "receita" ? "Receitas" : "Despesas"} de ${monthYearLabel(competencia)}`}
+            value={formatMoney(resumoMes.total)}
+            progress={resumoMes.total > 0 ? resumoMes.feito / resumoMes.total : 0}
+            progressLabel={`${formatMoney(resumoMes.feito)} ${valueDoneLabel.toLowerCase()}s · ${
+              resumoMes.total > 0 ? Math.round((resumoMes.feito / resumoMes.total) * 100) : 0
+            }% · falta ${formatMoney(resumoMes.total - resumoMes.feito)}`}
+            rowsTitle={`Por ${tipo === "receita" ? "receita" : "despesa"} no mês`}
+            rows={resumoMes.linhas.map((l) => ({
+              id: l.id,
+              label: l.nome,
+              value: formatMoney(l.valor),
+              muted: l.feito,
+              icon: l.feito ? <Check size={14} strokeWidth={2.75} className="shrink-0" aria-label="feito" /> : undefined,
+            }))}
+            totalLabel="Total do mês"
+            totalValue={formatMoney(resumoMes.total)}
+          />
         )}
 
         {!contaPadraoId && (
-          <p className="px-1 text-[11px] text-ink-400">
-            Defina uma conta padrão em <Link href="/patrimonio" className="font-bold text-brand-600">Patrimônio</Link> para
+          <p className="caption px-1">
+            Defina uma conta padrão em <Link href="/patrimonio" className="font-semibold text-brand-700 underline underline-offset-2">Patrimônio</Link> para
             que marcar como {valueDoneLabel.toLowerCase()} atualize o saldo automaticamente.
           </p>
         )}
 
         {items.length === 0 ? (
-          <EmptyState icon={icon} title="Nada por aqui ainda" hint="Adicione o primeiro item" />
+          <EmptyState
+            icon={icon}
+            title={tipo === "receita" ? "Nenhuma receita ainda" : "Nenhuma despesa ainda"}
+            hint={tipo === "receita" ? "Cadastre salário, pró-labore e outras entradas no botão abaixo." : "Cadastre contas fixas, cartões e compras no botão abaixo."}
+          />
         ) : itemsVisiveis.length === 0 ? (
           <EmptyState icon={icon} title="Nada neste mês" hint="Itens pontuais só aparecem no mês em que ocorreram" />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {itemsCartoes.length > 0 && (
               <div className="space-y-2">
-                <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Cartões</p>
+                <h3 className="group-label">Cartões</h3>
                 {itemsCartoes.map(renderItem)}
               </div>
             )}
             {itemsFixos.length > 0 && (
               <div className="space-y-2">
-                <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Fixas</p>
+                <h3 className="group-label">Fixas</h3>
                 {itemsFixos.map(renderItem)}
               </div>
             )}
             {itemsParcelados.length > 0 && (
               <div className="space-y-2">
-                <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Parceladas</p>
+                <h3 className="group-label">Parceladas</h3>
                 {itemsParcelados.map(renderItem)}
               </div>
             )}
             {itemsConsorcio.length > 0 && (
               <div className="space-y-2">
-                <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Consórcios</p>
+                <h3 className="group-label">Consórcios</h3>
                 {itemsConsorcio.map(renderItem)}
               </div>
             )}
             {itemsSazonais.length > 0 && (
               <div className="space-y-2">
-                <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Anuais e sazonais</p>
+                <h3 className="group-label">Anuais e sazonais</h3>
                 {itemsSazonais.map(renderItem)}
               </div>
             )}
             {itemsPontuais.length > 0 && (
               <div className="space-y-2">
-                <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Pontuais</p>
+                <h3 className="group-label">Pontuais</h3>
                 {itemsPontuais.map(renderItem)}
               </div>
             )}
@@ -893,16 +855,16 @@ export function MonthlyItemsScreen({
         )}
 
         {open ? (
-          <form onSubmit={submitItem} className="space-y-2 rounded-3xl bg-white p-4 shadow-card">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-400">
-              {editingId ? "Editar" : "Novo item"}
+          <form onSubmit={submitItem} className="space-y-3 rounded-3xl bg-white p-4 shadow-card">
+            <p className="section-title">
+              {editingId ? "Editar item" : tipo === "receita" ? "Nova receita" : "Nova despesa"}
             </p>
             <input
               autoFocus
               placeholder="Nome"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+              className="field"
             />
             {showDia && (
               <input
@@ -912,12 +874,12 @@ export function MonthlyItemsScreen({
                 placeholder="Dia de vencimento"
                 value={dia}
                 onChange={(e) => setDia(e.target.value)}
-                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                className="field"
               />
             )}
             {tipo === "despesa" && (
               <>
-                <label className="flex items-center gap-2 px-1 text-sm text-ink-600">
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1 text-[15px] text-ink-800">
                   <input
                     type="checkbox"
                     checked={cartao}
@@ -925,7 +887,7 @@ export function MonthlyItemsScreen({
                       setCartao(e.target.checked);
                       if (e.target.checked) setFixo(true);
                     }}
-                    className="h-4 w-4 rounded accent-brand-600"
+                    className="h-5 w-5 shrink-0 rounded accent-brand-600"
                   />
                   É um cartão de crédito
                 </label>
@@ -936,23 +898,23 @@ export function MonthlyItemsScreen({
                     placeholder="Limite do cartão (opcional)"
                     value={limite}
                     onChange={(e) => setLimite(e.target.value)}
-                    className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                    className="field"
                   />
                 )}
               </>
             )}
-            <label className="flex items-center gap-2 px-1 text-sm text-ink-600">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1 text-[15px] text-ink-800">
               <input
                 type="checkbox"
                 checked={fixo}
                 disabled={cartao}
                 onChange={(e) => setFixo(e.target.checked)}
-                className="h-4 w-4 rounded accent-brand-600 disabled:opacity-50"
+                className="h-5 w-5 shrink-0 rounded accent-brand-600 disabled:opacity-50"
               />
               É {tipo === "receita" ? "uma receita" : "uma despesa"} fixa (repete todo mês)
             </label>
             {!cartao && !fixo && (
-              <label className="flex items-center gap-2 px-1 text-sm text-ink-600">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1 text-[15px] text-ink-800">
                 <input
                   type="checkbox"
                   checked={sazonal}
@@ -962,7 +924,7 @@ export function MonthlyItemsScreen({
                       setMesesSazonal([Number(competencia.slice(5, 7))]);
                     }
                   }}
-                  className="h-4 w-4 rounded accent-brand-600"
+                  className="h-5 w-5 shrink-0 rounded accent-brand-600"
                 />
                 Repete só em alguns meses do ano (anual/sazonal)
               </label>
@@ -980,7 +942,7 @@ export function MonthlyItemsScreen({
                         setMesesSazonal((prev) => (on ? prev.filter((m) => m !== mes) : [...prev, mes]))
                       }
                       aria-pressed={on}
-                      className={`rounded-xl py-2 text-xs font-bold transition ${
+                      className={`min-h-11 rounded-xl text-[13px] font-semibold transition active:scale-95 ${
                         on ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-500"
                       }`}
                     >
@@ -997,7 +959,7 @@ export function MonthlyItemsScreen({
                 placeholder="Número de parcelas (opcional)"
                 value={parcelas}
                 onChange={(e) => setParcelas(e.target.value)}
-                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                className="field"
               />
             )}
             {!cartao && !fixo && !sazonal && parcelas && Number(parcelas) > 1 && (
@@ -1013,7 +975,7 @@ export function MonthlyItemsScreen({
                   placeholder="1"
                   value={parcelaAtual}
                   onChange={(e) => setParcelaAtual(e.target.value)}
-                  className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                  className="field"
                 />
               </label>
             )}
@@ -1024,7 +986,7 @@ export function MonthlyItemsScreen({
                   <select
                     value={cartaoId}
                     onChange={(e) => setCartaoId(e.target.value)}
-                    className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                    className="field"
                   >
                     <option value="">Nenhum cartão (boleto, pix, débito)</option>
                     {cartoesCadastrados.map((c) => (
@@ -1042,18 +1004,18 @@ export function MonthlyItemsScreen({
                     placeholder={parcelas && Number(parcelas) > 1 ? "Valor de cada parcela" : "Valor da compra"}
                     value={valorCompra}
                     onChange={(e) => setValorCompra(e.target.value)}
-                    className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                    className="field"
                   />
                 )}
               </div>
             )}
             {cartao ? (
-              <p className="px-1 text-[11px] text-ink-400">
+              <p className="caption px-1">
                 Cartão é sempre fixo: você sempre tem fatura, só o valor muda todo mês. Compras
                 parceladas nele você lança como despesa nova, escolhendo o cartão em &quot;Vai na fatura de&quot;.
               </p>
             ) : fixo ? null : sazonal ? (
-              <p className="px-1 text-[11px] text-ink-400">
+              <p className="caption px-1">
                 {mesesSazonal.length === 1
                   ? `Anual: aparece todo ano em ${MESES_ANO[mesesSazonal[0] - 1]}, repetindo o último valor lançado.`
                   : mesesSazonal.length > 1
@@ -1061,28 +1023,28 @@ export function MonthlyItemsScreen({
                     : "Escolha os meses do ano em que ela acontece."}
               </p>
             ) : cartaoId ? (
-              <p className="px-1 text-[11px] text-ink-400">
+              <p className="caption px-1">
                 {parcelas && Number(parcelas) > 1
                   ? `Soma na fatura do ${cartoesCadastrados.find((c) => c.id === cartaoId)?.nome ?? "cartão"} por ${Number(parcelas)} meses`
                   : `Soma na fatura do ${cartoesCadastrados.find((c) => c.id === cartaoId)?.nome ?? "cartão"} só neste mês`}
                 {valorCompra && Number(valorCompra) > 0 ? ` (${formatMoney(Number(valorCompra))} por mês)` : ""}.
               </p>
             ) : parcelas && Number(parcelas) > 1 ? (
-              <p className="px-1 text-[11px] text-ink-400">
+              <p className="caption px-1">
                 Ao salvar o valor, ele se repete automaticamente pelas próximas {Number(parcelas) - 1} mês(es).
               </p>
             ) : (
-              <p className="px-1 text-[11px] text-ink-400">
+              <p className="caption px-1">
                 Sem marcar, fica pontual: só aparece em {monthLabel(competencia)}.
               </p>
             )}
             {showExpectativa && (
-              <label className="flex items-center gap-2 px-1 text-sm text-ink-600">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1 text-[15px] text-ink-800">
                 <input
                   type="checkbox"
                   checked={expectativa}
                   onChange={(e) => setExpectativa(e.target.checked)}
-                  className="h-4 w-4 rounded accent-brand-600"
+                  className="h-5 w-5 shrink-0 rounded accent-brand-600"
                 />
                 É uma expectativa (não garantido)
               </label>
@@ -1092,14 +1054,14 @@ export function MonthlyItemsScreen({
               <button
                 type="button"
                 onClick={closeForm}
-                className="flex-1 rounded-2xl bg-ink-100 py-2.5 text-sm font-semibold text-ink-700"
+                className="btn-secondary flex-1"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                className="btn-primary flex-1"
               >
                 Salvar
               </button>
@@ -1108,7 +1070,7 @@ export function MonthlyItemsScreen({
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className={`w-full rounded-2xl border-2 border-dashed py-3 text-sm font-bold ${tones.dash}`}
+            className={`btn-add ${tones.dash}`}
           >
             + Adicionar
           </button>

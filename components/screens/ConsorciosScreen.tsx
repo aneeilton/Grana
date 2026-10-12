@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BadgeCheck, CarFront, Gavel, X } from "lucide-react";
+import { BadgeCheck, CarFront, Gavel, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, EmptyState } from "@/components/ui/Card";
+import { SummaryCard } from "@/components/ui/SummaryCard";
 import { resumirConsorcios, type ResumoConsorcio } from "@/lib/consorcios";
 import { currentCompetencia, formatMoney, monthLabel, monthYearLabel, shiftCompetencia } from "@/lib/format";
 import type { Consorcio, Item, Lancamento } from "@/lib/types";
 
-const inputCls =
-  "w-full rounded-2xl border border-ink-100 bg-ink-50 px-3 py-2.5 text-sm outline-none focus:border-brand-400";
+const inputCls = "field";
 
 /**
  * Aba Consórcio: visão própria das cotas. As parcelas em si são despesas
@@ -268,85 +268,64 @@ export function ConsorciosScreen({
   }
 
   return (
-    <div className="space-y-4 px-4">
+    <div className="space-y-5 px-4">
       {resumos.length === 0 ? (
         <EmptyState icon={CarFront} title="Nenhum consórcio ainda" hint="Adicione sua primeira cota abaixo" />
       ) : (
-        <Card className="bg-gradient-to-br from-sky-500 to-[#0B3B30] text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Parcelas de consórcio</p>
-          <p className="mt-1 text-3xl font-extrabold [font-variant-numeric:tabular-nums]">
-            {formatMoney(totalParcelas)}
-            <span className="text-base font-bold text-white/70">/mês</span>
-          </p>
-          <p className="mt-1 text-sm font-semibold text-white/90">
-            {formatMoney(totalCartas)} em cartas · {formatMoney(totalDevedor)} a pagar
-          </p>
-
-          <div className="mt-4 border-t border-white/15 pt-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Saldo devedor por cota</p>
-            <div className="mt-1.5 space-y-1.5">
-              {resumos.map((r) => (
-                <div key={r.consorcio.id} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="flex min-w-0 items-center gap-1.5 text-white/90">
-                    {r.consorcio.contemplado && <BadgeCheck size={14} strokeWidth={2.5} className="shrink-0" />}
-                    <span className="truncate">{r.consorcio.nome}</span>
-                  </span>
-                  <span className="shrink-0 font-bold [font-variant-numeric:tabular-nums]">
-                    {formatMoney(r.saldoDevedor)}
-                  </span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between gap-3 border-t border-white/15 pt-1.5 text-sm">
-                <span className="font-semibold text-white/80">Total a pagar</span>
-                <span className="shrink-0 font-extrabold [font-variant-numeric:tabular-nums]">
-                  {formatMoney(totalDevedor)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <SummaryCard
+          tone="sky"
+          title="Parcelas de consórcio"
+          value={formatMoney(totalParcelas)}
+          valueSuffix="/mês"
+          subtitle={`${formatMoney(totalCartas)} em cartas · ${formatMoney(totalDevedor)} a pagar`}
+          rowsTitle="Saldo devedor por cota"
+          rows={resumos.map((r) => ({
+            id: r.consorcio.id,
+            label: r.consorcio.nome,
+            value: formatMoney(r.saldoDevedor),
+            icon: r.consorcio.contemplado ? (
+              <BadgeCheck size={15} strokeWidth={2.5} className="shrink-0" aria-label="contemplado" />
+            ) : undefined,
+          }))}
+          totalLabel="Total a pagar"
+          totalValue={formatMoney(totalDevedor)}
+        />
       )}
 
       {intencoes.length > 0 && (
-        <Card className="bg-sun-500/10">
+        <Card className="bg-sun-100 shadow-none">
           <div className="flex items-center gap-2 text-sun-500">
-            <Gavel size={16} strokeWidth={2.25} />
-            <p className="text-sm font-bold">Intenção de lance (simulação)</p>
+            <Gavel size={17} strokeWidth={2.25} aria-hidden />
+            <p className="text-[15px] font-semibold">Intenção de lance (simulação)</p>
           </div>
-          <div className="mt-2 space-y-1 text-xs text-ink-700">
-            <div className="flex justify-between gap-3">
-              <span>Sai da conta ({intencoes.length} {intencoes.length === 1 ? "lance" : "lances"})</span>
-              <span className="font-bold [font-variant-numeric:tabular-nums]">{formatMoney(lanceTotal)}</span>
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="min-w-0">
+              <dt className="caption">Sai da conta · {intencoes.length} {intencoes.length === 1 ? "lance" : "lances"}</dt>
+              <dd className="text-[15px] font-semibold text-ink-900">{formatMoney(lanceTotal)}</dd>
             </div>
-            <div className="flex justify-between gap-3">
-              <span>Saldo nas contas hoje → depois dos lances</span>
-              <span
-                className={`font-bold [font-variant-numeric:tabular-nums] ${
-                  saldoContas - lanceTotal < 0 ? "text-coral-500" : ""
-                }`}
-              >
-                {formatMoney(saldoContas)} → {formatMoney(saldoContas - lanceTotal)}
-              </span>
+            <div className="min-w-0">
+              <dt className="caption">Saldo depois dos lances</dt>
+              <dd className={`text-[15px] font-semibold ${saldoContas - lanceTotal < 0 ? "text-coral-500" : "text-ink-900"}`}>
+                {formatMoney(saldoContas - lanceTotal)}
+              </dd>
+              <dd className="caption">hoje: {formatMoney(saldoContas)}</dd>
             </div>
-            <div className="flex justify-between gap-3">
-              <span>Parcelas por mês</span>
-              <span className="font-bold [font-variant-numeric:tabular-nums]">
-                {formatMoney(totalParcelas)} → {formatMoney(totalParcelas - economiaMensal)}
-              </span>
+            <div className="min-w-0">
+              <dt className="caption">Parcelas por mês</dt>
+              <dd className="text-[15px] font-semibold text-ink-900">{formatMoney(totalParcelas - economiaMensal)}</dd>
+              <dd className="caption">hoje: {formatMoney(totalParcelas)}</dd>
             </div>
-            <div className="flex justify-between gap-3">
-              <span>Economia por mês</span>
-              <span className="font-bold text-brand-700 [font-variant-numeric:tabular-nums]">
-                {formatMoney(economiaMensal)}
-              </span>
+            <div className="min-w-0">
+              <dt className="caption">Economia por mês</dt>
+              <dd className="text-[15px] font-semibold text-brand-700">{formatMoney(economiaMensal)}</dd>
             </div>
-            {economiaMensal > 0 && (
-              <p className="pt-1 text-[11px] text-ink-500">
-                O lance se paga com a economia nas parcelas em uns {Math.ceil(lanceTotal / economiaMensal)} meses. Não
-                entra na projeção até você marcar como aceito.
-              </p>
-            )}
-          </div>
+          </dl>
+          {economiaMensal > 0 && (
+            <p className="mt-3 border-t border-sun-400/40 pt-3 text-[13px] text-ink-700">
+              O lance se paga com a economia nas parcelas em uns {Math.ceil(lanceTotal / economiaMensal)} meses. Não
+              entra na projeção até você marcar como aceito.
+            </p>
+          )}
         </Card>
       )}
 
@@ -366,41 +345,41 @@ export function ConsorciosScreen({
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <button
                       onClick={() => alternarContemplado(c)}
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      className={`inline-flex min-h-8 items-center rounded-full px-2.5 text-xs font-semibold transition active:scale-95 ${
                         c.contemplado ? "bg-brand-100 text-brand-700" : "bg-ink-100 text-ink-500"
                       }`}
                     >
                       {c.contemplado ? "Contemplado" : "Não contemplado"}
                     </button>
                     {c.taxa_adm != null && (
-                      <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold text-ink-500">
+                      <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold text-ink-500">
                         Tx. adm {Number(c.taxa_adm).toLocaleString("pt-BR")}%
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-              <button onClick={() => remover(c)} className="text-ink-400 hover:text-coral-500" aria-label="Remover">
-                <X size={16} strokeWidth={2.25} />
+              <button onClick={() => remover(c)} className="icon-btn hover:text-coral-500" aria-label={`Remover ${c.nome}`}>
+                <Trash2 size={17} strokeWidth={2} aria-hidden />
               </button>
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-2xl bg-ink-50 p-2">
-                <p className="text-[10px] font-semibold text-ink-400">Carta</p>
-                <p className="text-xs font-extrabold text-ink-800 [font-variant-numeric:tabular-nums]">
+              <div className="rounded-xl bg-ink-50 px-2 py-2.5">
+                <p className="text-[11px] font-medium text-ink-500">Carta</p>
+                <p className="mt-0.5 text-[13px] font-semibold text-ink-800">
                   {formatMoney(Number(c.carta))}
                 </p>
               </div>
-              <div className="rounded-2xl bg-ink-50 p-2">
-                <p className="text-[10px] font-semibold text-ink-400">Parcela</p>
-                <p className="text-xs font-extrabold text-ink-800 [font-variant-numeric:tabular-nums]">
+              <div className="rounded-xl bg-ink-50 px-2 py-2.5">
+                <p className="text-[11px] font-medium text-ink-500">Parcela</p>
+                <p className="mt-0.5 text-[13px] font-semibold text-ink-800">
                   {formatMoney(r.parcelaAtual)}
                 </p>
               </div>
-              <div className="rounded-2xl bg-ink-50 p-2">
-                <p className="text-[10px] font-semibold text-ink-400">Saldo devedor</p>
-                <p className="text-xs font-extrabold text-coral-500 [font-variant-numeric:tabular-nums]">
+              <div className="rounded-xl bg-ink-50 px-2 py-2.5">
+                <p className="text-[11px] font-medium text-ink-500">Saldo devedor</p>
+                <p className="mt-0.5 text-[13px] font-semibold text-coral-500">
                   {formatMoney(r.saldoDevedor)}
                 </p>
               </div>
@@ -432,16 +411,16 @@ export function ConsorciosScreen({
                   <button
                     onClick={() => aceitarLance(r)}
                     disabled={saving}
-                    className="flex-1 rounded-xl bg-brand-600 py-2 font-bold text-white disabled:opacity-60"
+                    className="btn-primary flex-1"
                   >
                     Lance aceito
                   </button>
-                  <button onClick={() => abrirLance(r)} className="rounded-xl bg-white px-3 py-2 font-bold text-ink-700">
+                  <button onClick={() => abrirLance(r)} className="btn bg-white text-ink-800">
                     Editar
                   </button>
                   <button
                     onClick={() => cancelarIntencao(c)}
-                    className="rounded-xl bg-white px-3 py-2 font-bold text-ink-500"
+                    className="btn bg-white text-ink-500"
                   >
                     Cancelar
                   </button>
@@ -457,7 +436,7 @@ export function ConsorciosScreen({
             {!c.contemplado && c.lance_status !== "intencao" && lanceDe !== c.id && (
               <button
                 onClick={() => abrirLance(r)}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-sun-400 py-2 text-xs font-bold text-sun-500"
+                className="btn-add mt-3 border-sun-400 text-sun-500"
               >
                 <Gavel size={14} strokeWidth={2.25} />
                 Planejar lance
@@ -465,7 +444,7 @@ export function ConsorciosScreen({
             )}
             {lanceDe === c.id && (
               <form onSubmit={salvarIntencao} className="mt-3 space-y-2 border-t border-ink-100 pt-3">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-ink-400">Intenção de lance</p>
+                <p className="text-[13px] font-semibold text-ink-400">Intenção de lance</p>
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block space-y-1">
                     <span className="px-1 text-[11px] font-semibold text-ink-500">Valor do lance</span>
@@ -507,14 +486,14 @@ export function ConsorciosScreen({
                   <button
                     type="button"
                     onClick={() => setLanceDe(null)}
-                    className="flex-1 rounded-2xl bg-ink-100 py-2.5 text-sm font-semibold text-ink-700"
+                    className="btn-secondary flex-1"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                    className="btn-primary flex-1"
                   >
                     Salvar intenção
                   </button>
@@ -526,7 +505,7 @@ export function ConsorciosScreen({
       })}
 
       {naoContemplados.length > 0 && (
-        <p className="px-1 text-[11px] text-ink-400">
+        <p className="caption px-1">
           Cotas não contempladas são compromisso futuro: as parcelas entram na projeção, mas o saldo devedor só vira
           dívida no patrimônio quando a cota for contemplada.
         </p>
@@ -534,7 +513,7 @@ export function ConsorciosScreen({
 
       {open ? (
         <form onSubmit={criar} className="space-y-2 rounded-3xl bg-white p-4 shadow-card">
-          <p className="text-xs font-bold uppercase tracking-wide text-ink-400">Novo consórcio</p>
+          <p className="text-[13px] font-semibold text-ink-400">Novo consórcio</p>
           <input autoFocus placeholder="Nome (ex: Carro cota 1)" value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} />
           <div className="grid grid-cols-2 gap-2">
             <input type="number" inputMode="decimal" step="0.01" placeholder="Valor da carta" value={carta} onChange={(e) => setCarta(e.target.value)} className={inputCls} />
@@ -543,24 +522,24 @@ export function ConsorciosScreen({
             <input type="number" inputMode="numeric" min={2} placeholder="Parcelas a vencer" value={restantes} onChange={(e) => setRestantes(e.target.value)} className={inputCls} />
             <input type="number" min={1} max={31} placeholder="Dia de vencimento" value={dia} onChange={(e) => setDia(e.target.value)} className={inputCls} />
           </div>
-          <label className="flex items-center gap-2 px-1 text-sm text-ink-700">
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1 text-[15px] text-ink-800">
             <input
               type="checkbox"
               checked={contemplado}
               onChange={(e) => setContemplado(e.target.checked)}
-              className="h-4 w-4 rounded accent-brand-600"
+              className="h-5 w-5 shrink-0 rounded accent-brand-600"
             />
             Já foi contemplado (já tenho o bem)
           </label>
-          <p className="px-1 text-[11px] text-ink-400">
+          <p className="caption px-1">
             A parcela de {monthLabel(hoje)} conta como a 1ª das parcelas a vencer.
           </p>
           {error && !lanceDe && <p className="text-xs font-medium text-coral-500">Erro: {error}</p>}
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={resetForm} className="flex-1 rounded-2xl bg-ink-100 py-2.5 text-sm font-semibold text-ink-700">
+            <button type="button" onClick={resetForm} className="btn-secondary flex-1">
               Cancelar
             </button>
-            <button type="submit" disabled={saving} className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60">
+            <button type="submit" disabled={saving} className="btn-primary flex-1">
               Salvar
             </button>
           </div>
@@ -568,7 +547,7 @@ export function ConsorciosScreen({
       ) : (
         <button
           onClick={() => setOpen(true)}
-          className="w-full rounded-2xl border-2 border-dashed border-sky-400 py-3 text-sm font-bold text-sky-500"
+          className="btn-add border-sky-400 text-sky-600"
         >
           + Adicionar consórcio
         </button>

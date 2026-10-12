@@ -1,9 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 
+/**
+ * Título grande no topo de cada aba (no estilo "large title"): o nome da
+ * seção carrega a hierarquia sozinho, sem selo de ícone colorido -- o
+ * ícone já está na barra de abas. `icon` continua aceito só por
+ * compatibilidade de chamada.
+ */
 export function TopHeader({
   title,
   subtitle,
-  icon: Icon,
   right,
 }: {
   title: string;
@@ -12,18 +17,11 @@ export function TopHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <header className="px-5 pb-4 pt-6">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {Icon && (
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-700 text-white">
-              <Icon size={19} strokeWidth={2} />
-            </span>
-          )}
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-ink-900">{title}</h1>
-            {subtitle && <p className="mt-0.5 text-sm text-ink-500">{subtitle}</p>}
-          </div>
+    <header className="px-5 pb-3 pt-7">
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[30px] font-bold leading-tight tracking-tight text-ink-900">{title}</h1>
+          {subtitle && <p className="mt-0.5 text-[15px] text-ink-500">{subtitle}</p>}
         </div>
         {right}
       </div>

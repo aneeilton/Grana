@@ -14,7 +14,7 @@ export default function AppError({
       <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-coral-500/10 text-coral-500">
         <OctagonAlert size={22} strokeWidth={1.75} />
       </span>
-      <p className="text-sm font-bold text-ink-800">Algo deu errado ao carregar essa tela</p>
+      <p className="text-[17px] font-semibold text-ink-900">Algo deu errado ao carregar essa tela</p>
       <p className="max-w-xs break-words rounded-2xl bg-white p-3 text-xs text-ink-500 shadow-card">
         {error.message || "Erro sem mensagem (verifique os Runtime Logs na Vercel)."}
         {error.digest && (
@@ -26,7 +26,7 @@ export default function AppError({
       </p>
       <button
         onClick={reset}
-        className="rounded-2xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white"
+        className="btn-primary px-5"
       >
         Tentar de novo
       </button>

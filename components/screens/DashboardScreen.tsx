@@ -19,9 +19,11 @@ import {
   ShieldCheck,
   TrendingUp,
   TriangleAlert,
+  Wallet,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Card, EmptyState } from "@/components/ui/Card";
+import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
+import { SummaryCard } from "@/components/ui/SummaryCard";
 import { StatCard } from "@/components/ui/StatCard";
 import { DespesaDiariaCard } from "@/components/screens/DespesaDiariaCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
@@ -326,19 +328,19 @@ export function DashboardScreen({
     };
   }, [proximoSemestre, items, lancamentos, resumoSemestre.receitas, totalDividas]);
 
-  function tomPct(pct: number, atencao: number, critico: number) {
+  function tomPctTexto(pct: number, atencao: number, critico: number) {
     return pct >= critico
-      ? "bg-coral-500/10 text-coral-500"
+      ? "text-coral-500"
       : pct >= atencao
-        ? "bg-sun-500/10 text-sun-500"
-        : "bg-brand-50 text-brand-700";
+        ? "text-sun-500"
+        : "text-brand-700";
   }
 
   const comprometimentoTone =
     resumoSemestre.comprometimento >= 80
-      ? { bg: "bg-coral-500/10", text: "text-coral-500" }
+      ? { bg: "bg-coral-100", text: "text-coral-500" }
       : resumoSemestre.comprometimento >= 50
-        ? { bg: "bg-sun-500/10", text: "text-sun-500" }
+        ? { bg: "bg-sun-100", text: "text-sun-500" }
         : { bg: "bg-brand-100", text: "text-brand-700" };
 
   // Reserva em meses de custo: quantos meses o dinheiro disponível hoje
@@ -357,16 +359,16 @@ export function DashboardScreen({
     reserva.meses === null || reserva.meses >= 6
       ? { bg: "bg-brand-100", text: "text-brand-700", label: "Confortável" }
       : reserva.meses >= 3
-        ? { bg: "bg-sun-500/10", text: "text-sun-500", label: "Razoável" }
-        : { bg: "bg-coral-500/10", text: "text-coral-500", label: "Baixa" };
+        ? { bg: "bg-sun-100", text: "text-sun-500", label: "Razoável" }
+        : { bg: "bg-coral-100", text: "text-coral-500", label: "Baixa" };
 
   const critico = useMemo(() => mesCritico(proximoSemestre), [proximoSemestre]);
   const criticoTone =
     critico && critico.saldoFinal < 0
-      ? { bg: "bg-coral-500/10", text: "text-coral-500" }
+      ? { bg: "bg-coral-100", text: "text-coral-500" }
       : critico && critico.saldoFinal < reserva.custoMensal
-        ? { bg: "bg-sun-500/10", text: "text-sun-500" }
-        : { bg: "bg-ink-50", text: "text-ink-700" };
+        ? { bg: "bg-sun-100", text: "text-sun-500" }
+        : { bg: "bg-white shadow-card", text: "text-ink-900" };
 
   // "Sobra hoje" e "saúde financeira" olham sempre para o mês real de hoje,
   // não para o mês selecionado no seletor (que pode ser passado/futuro).
@@ -422,255 +424,205 @@ export function DashboardScreen({
     saudeFinanceira.nota >= 80
       ? { bg: "bg-brand-100", text: "text-brand-700", label: "Excelente" }
       : saudeFinanceira.nota >= 60
-        ? { bg: "bg-sky-500/10", text: "text-sky-500", label: "Boa" }
+        ? { bg: "bg-sky-100", text: "text-sky-500", label: "Boa" }
         : saudeFinanceira.nota >= 40
-          ? { bg: "bg-sun-500/10", text: "text-sun-500", label: "Atenção" }
-          : { bg: "bg-coral-500/10", text: "text-coral-500", label: "Crítica" };
+          ? { bg: "bg-sun-100", text: "text-sun-500", label: "Atenção" }
+          : { bg: "bg-coral-100", text: "text-coral-500", label: "Crítica" };
 
   // Projecao do mes: soma tambem as receitas pendentes (ex: salario que
   // ainda nao caiu), nao so as despesas -- senao parecia que o dinheiro
   // que ainda vai entrar nao contava pra "sobra" do mes.
   const livreAposFaturas = saldoAtual + mesAtual.receitaPendente - mesAtual.despesaPendente;
 
+  const toneText = (t: { text: string }) => t.text;
+
   return (
     <div>
-      <div className="flex items-center justify-between px-5 pb-3 pt-6">
-        <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-ink-900">{saudacao}!</h1>
-          <p className="mt-0.5 text-sm text-ink-500">Aqui está o resumo das suas finanças</p>
+      <header className="flex items-end justify-between gap-3 px-5 pb-3 pt-7">
+        <div className="min-w-0">
+          <h1 className="text-[30px] font-bold leading-tight tracking-tight text-ink-900">{saudacao}</h1>
+          <p className="mt-0.5 text-[15px] text-ink-500">Seu resumo de {monthLabel(competencia).toLowerCase()}</p>
         </div>
         <button
           onClick={alternarOculto}
           aria-label={oculto ? "Mostrar valores" : "Ocultar valores"}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-ink-100 text-ink-500"
+          aria-pressed={oculto}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-ink-700 shadow-card transition active:scale-95"
         >
-          {oculto ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
+          {oculto ? <EyeOff size={19} strokeWidth={2} aria-hidden /> : <Eye size={19} strokeWidth={2} aria-hidden />}
         </button>
-      </div>
+      </header>
 
-      <div className="space-y-4 px-4 pt-1">
+      <div className="space-y-6 px-4 pt-1">
         <MonthSelector competencia={competencia} onChange={setCompetencia} minCompetencia={MES_INICIAL} />
 
-        <Card className="bg-gradient-to-br from-brand-600 to-brand-900 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-            Saldo nas contas
-          </p>
-          <p className="mt-1 text-3xl font-extrabold [font-variant-numeric:tabular-nums]">
-            {fmt(saldoAtual)}
-          </p>
-          <p
-            className={`mt-2 text-sm font-semibold ${
-              livreAposFaturas >= 0 ? "text-brand-200" : "text-coral-200"
-            }`}
-          >
-            {livreAposFaturas >= 0 ? "💸 " : "⚠️ "}
-            {fmt(livreAposFaturas)} previstos até o fim do mês
-          </p>
-        </Card>
-
-        <Card className="bg-coral-500/10">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-coral-500/80">
-            Faturas em aberto
-          </p>
-          <p className="mt-1 text-2xl font-extrabold text-coral-500 [font-variant-numeric:tabular-nums]">
-            {fmt(mesAtual.despesaPendente)}
-          </p>
-        </Card>
-
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard icon={PiggyBank} label="Investido" value={fmt(totalAplicado)} tone="grape" />
-          <StatCard icon={FileWarning} label="Dívidas" value={fmt(totalDividas)} tone="coral" />
-          <StatCard icon={Gem} label="Bens" value={fmt(totalBens)} tone="sun" />
-          <StatCard icon={TrendingUp} label="Patrimônio líquido" value={fmt(patrimonioLiquido)} tone="sky" />
-        </div>
-
-        <Card className={`flex items-center justify-between gap-3 ${reservaTone.bg}`}>
-          <div className="flex min-w-0 items-center gap-2">
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/70 ${reservaTone.text}`}>
-              <ShieldCheck size={17} strokeWidth={2.25} />
-            </span>
-            <div className="min-w-0">
-              <p className={`text-sm font-bold ${reservaTone.text}`}>Reserva · {reservaTone.label}</p>
-              <p className="text-[11px] text-ink-500">
-                {reserva.meses === null
-                  ? "Sem despesas previstas para calcular"
-                  : `Contas + investido cobrem o custo médio de ${fmt(reserva.custoMensal)}/mês`}
-              </p>
-            </div>
-          </div>
-          <p className={`shrink-0 text-right font-extrabold [font-variant-numeric:tabular-nums] ${reservaTone.text}`}>
-            <span className="text-xl">
-              {reserva.meses === null ? "—" : oculto ? "••" : reserva.meses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
-            </span>
-            <span className="block text-[10px] font-semibold">meses</span>
-          </p>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className={`flex h-9 w-9 items-center justify-center rounded-2xl ${notaTone.bg} ${notaTone.text}`}>
-                <Activity size={17} strokeWidth={2.25} />
+        <SummaryCard
+          tone="brand"
+          title="Saldo nas contas"
+          value={fmt(saldoAtual)}
+          subtitle={
+            <span className="flex items-start gap-1.5">
+              {livreAposFaturas >= 0 ? (
+                <Wallet size={15} strokeWidth={2.25} className="mt-0.5 shrink-0" aria-hidden />
+              ) : (
+                <TriangleAlert size={15} strokeWidth={2.25} className="mt-0.5 shrink-0" aria-hidden />
+              )}
+              <span>
+                {fmt(livreAposFaturas)} previstos até o fim do mês · {fmt(sobraHoje)} por dia
               </span>
-              <div>
-                <p className="text-sm font-bold text-ink-800">Saúde financeira</p>
-                <p className={`text-xs font-bold ${notaTone.text}`}>{notaTone.label}</p>
-              </div>
-            </div>
-            <p className={`text-2xl font-extrabold [font-variant-numeric:tabular-nums] ${notaTone.text}`}>
-              {saudeFinanceira.nota}
-            </p>
-          </div>
-          <div className="mt-3 space-y-2">
-            {saudeFinanceira.componentes.map((c) => (
-              <div key={c.label}>
-                <div className="flex items-center justify-between text-[11px] text-ink-500">
-                  <span>{c.label}</span>
-                  <span className="font-bold text-ink-700">{Math.round(c.score)}</span>
-                </div>
-                <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
-                  <div
-                    className={`h-full rounded-full ${
-                      c.score >= 60 ? "bg-brand-500" : c.score >= 40 ? "bg-sun-400" : "bg-coral-400"
-                    }`}
-                    style={{ width: `${Math.max(4, c.score)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          {saudeFinanceira.pior.score < 60 && (
-            <p className="mt-3 text-[11px] text-ink-500">{saudeFinanceira.pior.dica}</p>
-          )}
-        </Card>
-
-        <DespesaDiariaCard
-          competencia={competencia}
-          gastosDiarios={gastosDiarios}
-          onChange={setGastosDiarios}
-        />
-
-        <Card>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-bold text-ink-800">Fluxo de {monthLabel(competencia).toLowerCase()}</p>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-extrabold [font-variant-numeric:tabular-nums] ${
-                saldoMes >= 0 ? "bg-brand-100 text-brand-700" : "bg-coral-500/10 text-coral-500"
-              }`}
-            >
-              {saldoMes >= 0 ? "+" : ""}
-              {fmt(saldoMes)}
             </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-2xl bg-brand-50 p-3">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-700">
-                <ArrowDownRight size={13} strokeWidth={2.5} />
-                Entradas
-              </div>
-              <p className="mt-1 text-lg font-extrabold text-brand-700 [font-variant-numeric:tabular-nums]">
-                {fmt(mes.receitaTotal)}
-              </p>
+          }
+        >
+          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/15 pt-3">
+            <div className="min-w-0">
+              <dt className="text-[13px] font-medium text-white/75">A pagar</dt>
+              <dd className="truncate text-[15px] font-semibold">{fmt(mesAtual.despesaPendente)}</dd>
             </div>
-            <div className="rounded-2xl bg-coral-500/10 p-3">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-coral-500">
-                <ArrowUpRight size={13} strokeWidth={2.5} />
-                Saídas
-              </div>
-              <p className="mt-1 text-lg font-extrabold text-coral-500 [font-variant-numeric:tabular-nums]">
-                {fmt(mes.despesaTotal)}
-              </p>
+            <div className="min-w-0">
+              <dt className="text-[13px] font-medium text-white/75">A receber</dt>
+              <dd className="truncate text-[15px] font-semibold">{fmt(mesAtual.receitaPendente)}</dd>
             </div>
-          </div>
-          <p className="mt-3 text-xs text-ink-500">
-            Saldo projetado até {ultimoDiaMes}/{monthLabel(competencia).toLowerCase()}:{" "}
-            <span className="font-bold text-ink-800">{fmt(mes.saldoFinal)}</span>
-          </p>
-        </Card>
+          </dl>
+        </SummaryCard>
 
-        <div>
-          <div className="mb-2 flex items-center justify-between px-1">
-            <p className="text-sm font-bold text-ink-800">Resumo dos próximos 6 meses</p>
-            <Link href="/semestre" className="text-xs font-bold text-brand-600">
-              Ver mais →
-            </Link>
+        <section>
+          <SectionHeader
+            title="Patrimônio"
+            action={
+              <Link href="/patrimonio" className="-my-2 -mr-2 inline-flex min-h-11 items-center rounded-xl px-2 text-[15px] font-semibold text-brand-700 transition hover:bg-brand-50">
+                Abrir
+              </Link>
+            }
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard icon={TrendingUp} label="Líquido" value={fmt(patrimonioLiquido)} tone="brand" />
+            <StatCard icon={PiggyBank} label="Investido" value={fmt(totalAplicado)} tone="grape" />
+            <StatCard icon={FileWarning} label="Dívidas" value={fmt(totalDividas)} tone="coral" />
+            <StatCard icon={Gem} label="Bens" value={fmt(totalBens)} tone="sun" />
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <StatCard
-              icon={Repeat}
-              label="Fixas"
-              value={fmt(resumoSemestre.fixas)}
-              tone="sun"
-              compact
-            />
-            <StatCard
-              icon={CreditCard}
-              label="Pontuais"
-              value={fmt(resumoSemestre.pontuais)}
-              tone="coral"
-              compact
-            />
-            <StatCard
-              icon={TrendingUp}
-              label="Receitas"
-              value={fmt(resumoSemestre.receitas)}
-              tone="brand"
-              compact
-            />
-          </div>
-          <Card className={`mt-2 flex items-center justify-between ${comprometimentoTone.bg}`}>
-            <div>
-              <p className={`text-xs font-bold ${comprometimentoTone.text}`}>Comprometimento de renda</p>
-              <p className="text-[11px] text-ink-500">
-                (despesas fixas + pontuais) ÷ receitas previstas nos próx. 6 meses
-              </p>
-            </div>
-            <p className={`text-xl font-extrabold [font-variant-numeric:tabular-nums] ${comprometimentoTone.text}`}>
-              {resumoSemestre.comprometimento.toFixed(0)}%
-            </p>
-          </Card>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <div className={`rounded-2xl p-3 ${tomPct(pesoCartoesDividas.cartoesPct, 30, 50)}`}>
-              <div className="flex items-center gap-1.5">
-                <CreditCard size={14} strokeWidth={2} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide opacity-80">Peso dos cartões</span>
-              </div>
-              <p className="mt-1 text-xl font-extrabold [font-variant-numeric:tabular-nums]">
-                {pesoCartoesDividas.cartoesPct.toFixed(0)}%
-              </p>
-              <p className="text-[10px] text-ink-500">da receita · {fmt(pesoCartoesDividas.cartoesMes)}/mês</p>
-            </div>
-            <div className={`rounded-2xl p-3 ${tomPct(pesoCartoesDividas.parcelasPct, 15, 30)}`}>
-              <div className="flex items-center gap-1.5">
-                <FileWarning size={14} strokeWidth={2} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide opacity-80">Em parcelas</span>
-              </div>
-              <p className="mt-1 text-xl font-extrabold [font-variant-numeric:tabular-nums]">
-                {pesoCartoesDividas.parcelasPct.toFixed(0)}%
-              </p>
-              <p className="text-[10px] text-ink-500">da receita · {fmt(pesoCartoesDividas.parcelasMes)}/mês</p>
-            </div>
-          </div>
-          {totalDividas > 0 && pesoCartoesDividas.dividasEmMeses !== null && (
-            <p className="mt-1.5 px-1 text-[11px] text-ink-500">
-              Dívidas cadastradas ({fmt(totalDividas)}) equivalem a{" "}
-              <span className="font-bold text-ink-700">
-                {oculto ? "••" : pesoCartoesDividas.dividasEmMeses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}{" "}
-                meses
-              </span>{" "}
-              da sua receita média.
-            </p>
-          )}
-          {critico && (
-            <Card className={`mt-2 flex items-start gap-3 ${criticoTone.bg}`}>
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/70 ${criticoTone.text}`}>
-                <TriangleAlert size={17} strokeWidth={2.25} />
+          <Card className="mt-3 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${reservaTone.bg} ${reservaTone.text}`}>
+                <ShieldCheck size={18} strokeWidth={2.25} aria-hidden />
               </span>
               <div className="min-w-0">
-                <p className={`text-xs font-bold ${criticoTone.text}`}>
+                <p className="text-[15px] font-semibold text-ink-900">
+                  Reserva <span className={`font-semibold ${toneText(reservaTone)}`}>· {reservaTone.label}</span>
+                </p>
+                <p className="caption">
+                  {reserva.meses === null
+                    ? "Sem despesas previstas para calcular"
+                    : `Contas + investido cobrem ${fmt(reserva.custoMensal)}/mês de custo`}
+                </p>
+              </div>
+            </div>
+            <p className="shrink-0 text-right">
+              <span className="text-[22px] font-bold tracking-tight text-ink-900">
+                {reserva.meses === null
+                  ? "—"
+                  : oculto
+                    ? "••"
+                    : reserva.meses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+              </span>
+              <span className="block text-xs font-medium text-ink-500">meses</span>
+            </p>
+          </Card>
+        </section>
+
+        <section>
+          <SectionHeader title="Saúde financeira" />
+          <Card>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${notaTone.bg} ${notaTone.text}`}>
+                  <Activity size={18} strokeWidth={2.25} aria-hidden />
+                </span>
+                <p className={`text-[17px] font-semibold ${notaTone.text}`}>{notaTone.label}</p>
+              </div>
+              <p className="text-[28px] font-bold leading-none tracking-tight text-ink-900">
+                {saudeFinanceira.nota}
+                <span className="text-[15px] font-medium text-ink-400">/100</span>
+              </p>
+            </div>
+            <ul className="mt-4 space-y-3">
+              {saudeFinanceira.componentes.map((c) => (
+                <li key={c.label}>
+                  <div className="flex items-center justify-between text-[13px]">
+                    <span className="text-ink-700">{c.label}</span>
+                    <span className="font-semibold text-ink-900">{Math.round(c.score)}</span>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
+                    <div
+                      className={`h-full rounded-full transition-[width] duration-500 ease-out-expo ${
+                        c.score >= 60 ? "bg-brand-500" : c.score >= 40 ? "bg-sun-400" : "bg-coral-400"
+                      }`}
+                      style={{ width: `${Math.max(4, c.score)}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {saudeFinanceira.pior.score < 60 && (
+              <p className="mt-4 rounded-xl bg-ink-50 p-3 text-[13px] text-ink-700">{saudeFinanceira.pior.dica}</p>
+            )}
+          </Card>
+        </section>
+
+        <DespesaDiariaCard competencia={competencia} gastosDiarios={gastosDiarios} onChange={setGastosDiarios} />
+
+        <section>
+          <SectionHeader title={`Fluxo de ${monthLabel(competencia).toLowerCase()}`} />
+          <Card className="p-0">
+            <ul className="divide-y divide-ink-100">
+              <li className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
+                <span className="flex items-center gap-2.5 text-[15px] text-ink-800">
+                  <ArrowDownRight size={18} strokeWidth={2.25} className="text-brand-600" aria-hidden />
+                  Entradas
+                </span>
+                <span className="text-[15px] font-semibold text-brand-700">{fmt(mes.receitaTotal)}</span>
+              </li>
+              <li className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
+                <span className="flex items-center gap-2.5 text-[15px] text-ink-800">
+                  <ArrowUpRight size={18} strokeWidth={2.25} className="text-coral-500" aria-hidden />
+                  Saídas
+                </span>
+                <span className="text-[15px] font-semibold text-coral-500">{fmt(mes.despesaTotal)}</span>
+              </li>
+              <li className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
+                <span className="text-[15px] font-semibold text-ink-900">Resultado do mês</span>
+                <span className={`text-[15px] font-bold ${saldoMes >= 0 ? "text-ink-900" : "text-coral-500"}`}>
+                  {saldoMes >= 0 ? "+" : ""}
+                  {fmt(saldoMes)}
+                </span>
+              </li>
+            </ul>
+            <p className="caption border-t border-ink-100 px-4 py-3">
+              Saldo projetado até {ultimoDiaMes}/{monthLabel(competencia).toLowerCase()}:{" "}
+              <span className="font-semibold text-ink-900">{fmt(mes.saldoFinal)}</span>
+            </p>
+          </Card>
+        </section>
+
+        <section>
+          <SectionHeader
+            title="Próximos 6 meses"
+            action={
+              <Link href="/semestre" className="-my-2 -mr-2 inline-flex min-h-11 items-center rounded-xl px-2 text-[15px] font-semibold text-brand-700 transition hover:bg-brand-50">
+                Semestre
+              </Link>
+            }
+          />
+          {critico && (
+            <div
+              role={critico.saldoFinal < 0 ? "alert" : undefined}
+              className={`mb-3 flex items-start gap-3 rounded-2xl p-4 ${criticoTone.bg}`}
+            >
+              <TriangleAlert size={20} strokeWidth={2.25} className={`mt-0.5 shrink-0 ${criticoTone.text}`} aria-hidden />
+              <div className="min-w-0">
+                <p className={`text-[15px] font-semibold ${criticoTone.text}`}>
                   Mês mais apertado: {monthYearLabel(critico.competencia)}
                 </p>
-                <p className="text-[11px] text-ink-500">
+                <p className="mt-0.5 text-[13px] text-ink-700">
                   {critico.saldoFinal < 0
                     ? `O saldo previsto fica negativo no fim do mês (${fmt(critico.saldoFinal)}). Antecipe uma receita ou corte despesas antes disso.`
                     : critico.saldoFinal < reserva.custoMensal
@@ -678,122 +630,189 @@ export function DashboardScreen({
                       : `É o menor saldo previsto do período (${fmt(critico.saldoFinal)} no fim do mês), mas ainda com folga.`}
                 </p>
               </div>
-            </Card>
+            </div>
           )}
-        </div>
+          <Card className="p-0">
+            <ul className="divide-y divide-ink-100">
+              {[
+                { icon: TrendingUp, cor: "text-brand-600", label: "Receitas previstas", value: fmt(resumoSemestre.receitas) },
+                { icon: Repeat, cor: "text-ink-500", label: "Despesas fixas", value: fmt(resumoSemestre.fixas) },
+                { icon: Receipt, cor: "text-ink-500", label: "Pontuais e parceladas", value: fmt(resumoSemestre.pontuais) },
+              ].map((r) => (
+                <li key={r.label} className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
+                  <span className="flex min-w-0 items-center gap-2.5 text-[15px] text-ink-800">
+                    <r.icon size={18} strokeWidth={2} className={`shrink-0 ${r.cor}`} aria-hidden />
+                    <span className="truncate">{r.label}</span>
+                  </span>
+                  <span className="shrink-0 text-[15px] font-semibold text-ink-900">{r.value}</span>
+                </li>
+              ))}
+              {[
+                {
+                  label: "Comprometimento de renda",
+                  hint: "fixas + pontuais ÷ receitas",
+                  pct: resumoSemestre.comprometimento,
+                  tone: toneText(comprometimentoTone),
+                },
+                {
+                  label: "Peso dos cartões",
+                  hint: `${fmt(pesoCartoesDividas.cartoesMes)}/mês`,
+                  pct: pesoCartoesDividas.cartoesPct,
+                  tone: tomPctTexto(pesoCartoesDividas.cartoesPct, 30, 50),
+                },
+                {
+                  label: "Em parcelas",
+                  hint: `${fmt(pesoCartoesDividas.parcelasMes)}/mês`,
+                  pct: pesoCartoesDividas.parcelasPct,
+                  tone: tomPctTexto(pesoCartoesDividas.parcelasPct, 15, 30),
+                },
+              ].map((r) => (
+                <li key={r.label} className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] text-ink-800">{r.label}</p>
+                    <p className="caption">{r.hint} · da receita</p>
+                  </div>
+                  <span className={`shrink-0 text-[17px] font-bold ${r.tone}`}>{r.pct.toFixed(0)}%</span>
+                </li>
+              ))}
+            </ul>
+            {totalDividas > 0 && pesoCartoesDividas.dividasEmMeses !== null && (
+              <p className="caption border-t border-ink-100 px-4 py-3">
+                Dívidas ({fmt(totalDividas)}) equivalem a{" "}
+                <span className="font-semibold text-ink-900">
+                  {oculto
+                    ? "••"
+                    : pesoCartoesDividas.dividasEmMeses.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}{" "}
+                  meses
+                </span>{" "}
+                da sua receita média.
+              </p>
+            )}
+          </Card>
+        </section>
 
-        <div>
-          <p className="mb-1 px-1 text-sm font-bold text-ink-800">Lançamentos do mês</p>
+        <section>
+          <SectionHeader title="Lançamentos do mês" />
           {!contaPadraoId && (
-            <p className="mb-2 px-1 text-[11px] text-ink-400">
-              Defina uma conta padrão em <Link href="/patrimonio" className="font-bold text-brand-600">Patrimônio</Link> para
-              que marcar como pago/recebido atualize o saldo automaticamente.
+            <p className="caption mb-2 px-1">
+              Defina uma conta padrão em{" "}
+              <Link href="/patrimonio" className="font-semibold text-brand-700 underline underline-offset-2">
+                Patrimônio
+              </Link>{" "}
+              para que marcar como pago/recebido atualize o saldo automaticamente.
             </p>
           )}
           {receitasDoMes.length === 0 && despesasDoMes.length === 0 ? (
-            <EmptyState icon={PartyPopper} title="Nada lançado neste mês" />
+            <EmptyState
+              icon={PartyPopper}
+              title="Nada lançado neste mês"
+              hint="Receitas e despesas cadastradas no Fluxo aparecem aqui para marcar como pagas."
+            />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {receitasDoMes.length > 0 && (
-                <div className="space-y-2">
-                  <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">
-                    A receber
-                  </p>
-                  {receitasDoMes.map((r) => (
-                    <Card key={r.id} className="flex items-center justify-between gap-2">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-700">
-                          <TrendingUp size={16} strokeWidth={2} />
-                        </span>
-                        <div className="min-w-0">
-                          <p className={`truncate text-sm font-semibold ${r.pago ? "text-ink-400" : "text-ink-800"}`}>
-                            {r.nome}
-                          </p>
-                          {r.inferido && <p className="text-[10px] text-ink-400">Previsto (repete o último mês)</p>}
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <p className="font-extrabold text-ink-800 [font-variant-numeric:tabular-nums]">
-                          {fmt(r.valor)}
-                        </p>
-                        <button
-                          onClick={() => togglePago(r.id)}
-                          disabled={togglingId === r.id}
-                          className={`flex items-center gap-1 whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-bold transition ${
-                            r.pago ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-500"
-                          }`}
-                        >
-                          {r.pago && <Check size={12} strokeWidth={2.5} />}
-                          {r.pago ? "Recebido" : "Pendente"}
-                        </button>
-                      </div>
-                    </Card>
-                  ))}
+                <div>
+                  <p className="group-label pb-1.5">A receber</p>
+                  <Card className="p-0">
+                    <ul className="divide-y divide-ink-100">
+                      {receitasDoMes.map((r) => (
+                        <li key={r.id} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+                              <TrendingUp size={17} strokeWidth={2} aria-hidden />
+                            </span>
+                            <div className="min-w-0">
+                              <p
+                                className={`truncate text-[15px] font-medium ${
+                                  r.pago ? "text-ink-400 line-through decoration-ink-200" : "text-ink-900"
+                                }`}
+                              >
+                                {r.nome}
+                              </p>
+                              <p className="caption truncate">
+                                {fmt(r.valor)}
+                                {r.inferido && " · previsto, repete o último mês"}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => togglePago(r.id)}
+                            disabled={togglingId === r.id}
+                            aria-pressed={r.pago}
+                            aria-label={`${r.nome}: ${r.pago ? "recebido, toque para marcar como pendente" : "pendente, toque para marcar como recebido"}`}
+                            className={`status-pill disabled:opacity-50 ${r.pago ? "bg-brand-600 text-white" : "bg-sun-100 text-sun-500"}`}
+                          >
+                            {r.pago && <Check size={14} strokeWidth={2.75} aria-hidden />}
+                            {r.pago ? "Recebido" : "Pendente"}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
                 </div>
               )}
 
               {despesasDoMes.length > 0 && (
-                <div className="space-y-2">
-                  <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">A pagar</p>
-                  {despesasDoMes.map((v) => {
-                    const VencIcon = v.cartao ? CreditCard : v.fixo ? Repeat : Receipt;
-                    return (
-                      <Card key={v.id} className="flex items-center justify-between gap-2">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${
-                              v.fixo ? "bg-sun-500/10 text-sun-500" : "bg-coral-500/10 text-coral-500"
-                            }`}
-                          >
-                            <VencIcon size={16} strokeWidth={2} />
-                          </span>
-                          <div className="min-w-0">
-                            <p className={`truncate text-sm font-semibold ${v.pago ? "text-ink-400" : "text-ink-800"}`}>
-                              {v.nome}
-                              {v.parcela && (
-                                <span className="ml-1.5 rounded-full bg-ink-100 px-1.5 py-0.5 text-[10px] font-bold text-ink-500">
-                                  {v.parcela}
-                                </span>
-                              )}
-                            </p>
-                            {v.dia && <p className="text-xs text-ink-400">Vence dia {v.dia}</p>}
-                            {v.parcelas > 0 && (
-                              <p className="text-[10px] text-ink-400">inclui {fmt(v.parcelas)} em parcelas</p>
-                            )}
-                            {v.inferido && (
-                              <p className="text-[10px] text-ink-400">Previsto (repete o último mês)</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <p className="font-extrabold text-ink-800 [font-variant-numeric:tabular-nums]">
-                            {fmt(v.valor)}
-                          </p>
-                          <button
-                            onClick={() => togglePago(v.id)}
-                            disabled={togglingId === v.id}
-                            className={`flex items-center gap-1 whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-bold transition ${
-                              v.pago ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-500"
-                            }`}
-                          >
-                            {v.pago && <Check size={12} strokeWidth={2.5} />}
-                            {v.pago ? "Pago" : "Pendente"}
-                          </button>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                <div>
+                  <p className="group-label pb-1.5">A pagar</p>
+                  <Card className="p-0">
+                    <ul className="divide-y divide-ink-100">
+                      {despesasDoMes.map((v) => {
+                        const VencIcon = v.cartao ? CreditCard : v.fixo ? Repeat : Receipt;
+                        const detalhes = [
+                          fmt(v.valor),
+                          v.dia ? `vence dia ${v.dia}` : null,
+                          v.parcela ? `parcela ${v.parcela}` : null,
+                          v.parcelas > 0 ? `inclui ${fmt(v.parcelas)} em parcelas` : null,
+                          v.inferido ? "previsto" : null,
+                        ].filter(Boolean);
+                        return (
+                          <li key={v.id} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span
+                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                                  v.cartao ? "bg-grape-100 text-grape-500" : "bg-coral-100 text-coral-500"
+                                }`}
+                              >
+                                <VencIcon size={17} strokeWidth={2} aria-hidden />
+                              </span>
+                              <div className="min-w-0">
+                                <p
+                                  className={`truncate text-[15px] font-medium ${
+                                    v.pago ? "text-ink-400 line-through decoration-ink-200" : "text-ink-900"
+                                  }`}
+                                >
+                                  {v.nome}
+                                </p>
+                                <p className="caption truncate">{detalhes.join(" · ")}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => togglePago(v.id)}
+                              disabled={togglingId === v.id}
+                              aria-pressed={v.pago}
+                              aria-label={`${v.nome}: ${v.pago ? "pago, toque para marcar como pendente" : "pendente, toque para marcar como pago"}`}
+                              className={`status-pill disabled:opacity-50 ${v.pago ? "bg-brand-600 text-white" : "bg-sun-100 text-sun-500"}`}
+                            >
+                              {v.pago && <Check size={14} strokeWidth={2.75} aria-hidden />}
+                              {v.pago ? "Pago" : "Pendente"}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </Card>
                 </div>
               )}
 
               {Object.entries(toggleErrors).map(([id, msg]) => (
-                <p key={id} className="px-1 text-xs font-medium text-coral-500">
+                <p key={id} role="alert" className="px-1 text-[13px] font-medium text-coral-500">
                   {itemsById.get(id)?.nome ?? "Item"}: {msg}
                 </p>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { TopHeader } from "@/components/TopHeader";
 import { MonthlyItemsScreen } from "@/components/screens/MonthlyItemsScreen";
 import { CartoesScreen } from "@/components/screens/CartoesScreen";
 import { ConsorciosScreen } from "@/components/screens/ConsorciosScreen";
+import { Segmented } from "@/components/ui/Segmented";
 import type { Consorcio, Conta, Item, Lancamento } from "@/lib/types";
 
 type TipoDados = { items: Item[]; lancamentos: Lancamento[] };
@@ -51,39 +52,18 @@ export function FluxoScreen({
         }
       />
 
-      <div className="flex gap-1.5 px-4 pb-2">
-        <button
-          onClick={() => setAba("receita")}
-          className={`flex-1 rounded-2xl py-2.5 text-xs font-bold transition ${
-            aba === "receita" ? "bg-brand-600 text-white shadow-card" : "bg-ink-100 text-ink-500"
-          }`}
-        >
-          Receitas
-        </button>
-        <button
-          onClick={() => setAba("despesa")}
-          className={`flex-1 rounded-2xl py-2.5 text-xs font-bold transition ${
-            aba === "despesa" ? "bg-coral-500 text-white shadow-card" : "bg-ink-100 text-ink-500"
-          }`}
-        >
-          Despesas
-        </button>
-        <button
-          onClick={() => setAba("cartoes")}
-          className={`flex-1 rounded-2xl py-2.5 text-xs font-bold transition ${
-            aba === "cartoes" ? "bg-grape-600 text-white shadow-card" : "bg-ink-100 text-ink-500"
-          }`}
-        >
-          Cartões
-        </button>
-        <button
-          onClick={() => setAba("consorcio")}
-          className={`flex-1 rounded-2xl py-2.5 text-xs font-bold transition ${
-            aba === "consorcio" ? "bg-sky-500 text-white shadow-card" : "bg-ink-100 text-ink-500"
-          }`}
-        >
-          Consórcio
-        </button>
+      <div className="px-4 pb-4">
+        <Segmented
+          label="Visão do fluxo"
+          value={aba}
+          onChange={setAba}
+          options={[
+            { value: "receita", label: "Receitas", dot: "bg-brand-500" },
+            { value: "despesa", label: "Despesas", dot: "bg-coral-500" },
+            { value: "cartoes", label: "Cartões", dot: "bg-grape-600" },
+            { value: "consorcio", label: "Consórcio", dot: "bg-sky-500" },
+          ]}
+        />
       </div>
 
       {/* As duas telas ficam sempre montadas (so escondidas via CSS) em vez

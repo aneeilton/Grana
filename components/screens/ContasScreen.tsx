@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Landmark, RefreshCw, Star, X } from "lucide-react";
+import { Landmark, RefreshCw, Star, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
 import { Card, EmptyState } from "@/components/ui/Card";
@@ -157,6 +157,8 @@ export function ContasScreen({
   }
 
   async function removeConta(id: string) {
+    const alvo = contas.find((c) => c.id === id);
+    if (!window.confirm(`Excluir a conta "${alvo?.nome ?? ""}"? O saldo dela sai do total e do patrimônio.`)) return;
     setContas((prev) => prev.filter((c) => c.id !== id));
     await supabase.from("contas").delete().eq("id", id);
   }
@@ -181,7 +183,7 @@ export function ContasScreen({
   return (
     <div>
       {hideHeader ? (
-        <p className="px-4 pb-2 text-sm text-ink-500">
+        <p className="sr-only">
           Saldo total ·{" "}
           <span className="font-bold text-ink-800">{formatMoney(totalCorrente + totalAplicado)}</span>
         </p>
@@ -193,19 +195,19 @@ export function ContasScreen({
         />
       )}
 
-      <div className="space-y-4 px-4 pt-4">
+      <div className="space-y-4 px-4 pt-1">
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-sky-500/10 text-sky-500">
-            <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
+          <Card className="p-3.5">
+            <p className="text-[13px] font-medium text-ink-500">
               Em conta
             </p>
-            <p className="text-lg font-extrabold">{formatMoney(totalCorrente)}</p>
+            <p className="mt-0.5 text-[17px] font-bold text-ink-900">{formatMoney(totalCorrente)}</p>
           </Card>
-          <Card className="bg-grape-500/10 text-grape-500">
-            <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
+          <Card className="p-3.5">
+            <p className="text-[13px] font-medium text-ink-500">
               Aplicado
             </p>
-            <p className="text-lg font-extrabold">{formatMoney(totalAplicado)}</p>
+            <p className="mt-0.5 text-[17px] font-bold text-ink-900">{formatMoney(totalAplicado)}</p>
           </Card>
         </div>
 
@@ -213,7 +215,7 @@ export function ContasScreen({
           <EmptyState icon={Landmark} title="Nenhuma conta ainda" hint="Adicione seu primeiro banco ou carteira" />
         ) : (
           <div className="space-y-2">
-            <p className="px-1 text-[11px] text-ink-400">
+            <p className="caption px-1">
               Toque na estrela para escolher a conta padrão: é nela que entram e saem os valores
               quando você marca um lançamento como pago/recebido.
             </p>
@@ -232,15 +234,16 @@ export function ContasScreen({
                       e.stopPropagation();
                       if (!savingPadrao) definirPadrao(conta.id);
                     }}
-                    aria-label="Definir como conta padrão"
-                    className={`shrink-0 ${conta.id === contaPadraoId ? "text-sun-500" : "text-ink-100 hover:text-sun-400"}`}
+                    aria-label={conta.id === contaPadraoId ? `${conta.nome} é a conta padrão` : `Definir ${conta.nome} como conta padrão`}
+                    aria-pressed={conta.id === contaPadraoId}
+                    className={`icon-btn ${conta.id === contaPadraoId ? "text-sun-500" : "text-ink-400 hover:text-sun-500"}`}
                   >
-                    <Star size={18} strokeWidth={2} fill={conta.id === contaPadraoId ? "currentColor" : "none"} />
+                    <Star size={19} strokeWidth={2} aria-hidden fill={conta.id === contaPadraoId ? "currentColor" : "none"} />
                   </button>
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-ink-800">{conta.nome}</p>
-                    <p className="text-xs text-ink-400">
-                      Aplicado: {formatMoney(Number(conta.saldo_aplicado))}
+                    <p className="truncate text-[15px] font-semibold text-ink-900">{conta.nome}</p>
+                    <p className="caption truncate">
+                      {Number(conta.saldo_aplicado) > 0 ? `Aplicado ${formatMoney(Number(conta.saldo_aplicado))}` : "Sem valor aplicado"}
                     </p>
                     {conta.limite != null && Number(conta.limite) > 0 && (
                       <p
@@ -253,7 +256,7 @@ export function ContasScreen({
                     )}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="flex shrink-0 items-center gap-1.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -261,7 +264,7 @@ export function ContasScreen({
                       else iniciarAtualizacao(conta);
                     }}
                     aria-label="Atualizar saldo"
-                    className="flex items-center gap-1 rounded-xl px-1.5 py-0.5 font-extrabold text-brand-700 hover:bg-brand-50"
+                    className="flex min-h-11 items-center gap-1.5 rounded-xl px-2.5 text-[15px] font-semibold text-brand-700 transition hover:bg-brand-50 active:scale-95"
                   >
                     {formatMoney(Number(conta.saldo_corrente))}
                     <RefreshCw size={13} strokeWidth={2.5} className="opacity-60" />
@@ -271,10 +274,10 @@ export function ContasScreen({
                       e.stopPropagation();
                       removeConta(conta.id);
                     }}
-                    className="text-ink-400 hover:text-coral-500"
+                    className="icon-btn hover:text-coral-500"
                     aria-label="Remover conta"
                   >
-                    <X size={16} strokeWidth={2.25} />
+                    <Trash2 size={17} strokeWidth={2} aria-hidden />
                   </button>
                 </div>
                 </div>
@@ -285,7 +288,7 @@ export function ContasScreen({
                     onClick={(e) => e.stopPropagation()}
                     className="mt-3 space-y-2 border-t border-ink-100 pt-3"
                   >
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink-400">
+                    <p className="text-[13px] font-semibold text-ink-400">
                       Atualizar saldo
                     </p>
                     <div className="grid grid-cols-2 gap-2">
@@ -299,7 +302,7 @@ export function ContasScreen({
                           value={novoCorrente}
                           onChange={(e) => setNovoCorrente(e.target.value)}
                           onFocus={(e) => e.target.select()}
-                          className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+                          className="field"
                         />
                       </label>
                       <label className="block space-y-1">
@@ -311,7 +314,7 @@ export function ContasScreen({
                           value={novoAplicado}
                           onChange={(e) => setNovoAplicado(e.target.value)}
                           onFocus={(e) => e.target.select()}
-                          className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+                          className="field"
                         />
                       </label>
                     </div>
@@ -334,14 +337,14 @@ export function ContasScreen({
                       <button
                         type="button"
                         onClick={fecharAtualizacao}
-                        className="flex-1 rounded-2xl bg-ink-100 py-2.5 text-sm font-semibold text-ink-700"
+                        className="btn-secondary flex-1"
                       >
                         Cancelar
                       </button>
                       <button
                         type="submit"
                         disabled={atualizando}
-                        className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                        className="btn-primary flex-1"
                       >
                         Atualizar
                       </button>
@@ -355,7 +358,7 @@ export function ContasScreen({
 
         {open ? (
           <form onSubmit={handleSubmit} className="space-y-2 rounded-3xl bg-white p-4 shadow-card">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-400">
+            <p className="text-[13px] font-semibold text-ink-400">
               {editingId ? "Editar conta" : "Nova conta"}
             </p>
             <input
@@ -363,7 +366,7 @@ export function ContasScreen({
               placeholder="Nome do banco"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+              className="field"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -372,7 +375,7 @@ export function ContasScreen({
                 placeholder="Saldo em conta"
                 value={corrente}
                 onChange={(e) => setCorrente(e.target.value)}
-                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                className="field"
               />
               <input
                 type="number"
@@ -380,7 +383,7 @@ export function ContasScreen({
                 placeholder="Aplicado"
                 value={aplicado}
                 onChange={(e) => setAplicado(e.target.value)}
-                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                className="field"
               />
             </div>
             <label className="block space-y-1">
@@ -393,7 +396,7 @@ export function ContasScreen({
                 placeholder="0,00"
                 value={limiteConta}
                 onChange={(e) => setLimiteConta(e.target.value)}
-                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+                className="field"
               />
             </label>
             {error && <p className="text-xs font-medium text-coral-500">Erro: {error}</p>}
@@ -401,14 +404,14 @@ export function ContasScreen({
               <button
                 type="button"
                 onClick={closeForm}
-                className="flex-1 rounded-2xl bg-ink-100 py-2.5 text-sm font-semibold text-ink-700"
+                className="btn-secondary flex-1"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                className="btn-primary flex-1"
               >
                 Salvar
               </button>
@@ -417,7 +420,7 @@ export function ContasScreen({
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="w-full rounded-2xl border-2 border-dashed border-brand-300 py-3 text-sm font-bold text-brand-600"
+            className="btn-add border-brand-300 text-brand-600"
           >
             + Adicionar conta
           </button>

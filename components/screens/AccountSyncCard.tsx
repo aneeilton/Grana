@@ -24,8 +24,8 @@ export function AccountSyncCard({
   if (!isAnonymous) {
     return (
       <Card>
-        <p className="text-sm font-semibold text-ink-800">Conta sincronizada</p>
-        <p className="mt-1 text-xs text-ink-500">
+        <p className="text-[17px] font-semibold text-ink-900">Conta sincronizada</p>
+        <p className="mt-1 text-[13px] text-ink-500">
           Conectado como <span className="font-semibold text-ink-700">{email}</span>. Seus dados
           acompanham você em qualquer aparelho — é só entrar com esse e-mail e senha.
         </p>
@@ -34,7 +34,7 @@ export function AccountSyncCard({
             await supabase.auth.signOut();
             router.refresh();
           }}
-          className="mt-3 w-full rounded-2xl border-2 border-coral-500/30 py-2.5 text-sm font-bold text-coral-500"
+          className="btn-danger mt-3 w-full"
         >
           Sair da conta
         </button>
@@ -65,20 +65,20 @@ export function AccountSyncCard({
 
   return (
     <Card>
-      <p className="text-sm font-semibold text-ink-800">Acessar de outros aparelhos</p>
-      <p className="mt-1 text-xs text-ink-500">
+      <p className="text-[17px] font-semibold text-ink-900">Acessar de outros aparelhos</p>
+      <p className="mt-1 text-[13px] text-ink-500">
         Seus dados aqui estão presos a este navegador. Crie um login para acessar de qualquer
         celular ou computador, sem perder o que já foi cadastrado.
       </p>
 
-      <div className="mt-3 flex gap-1 rounded-2xl bg-ink-50 p-1">
+      <div className="mt-3 flex gap-1 rounded-xl bg-ink-100 p-1">
         <button
           onClick={() => {
             setMode("criar");
             setError(null);
             setNotice(null);
           }}
-          className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+          className={`flex min-h-10 flex-1 items-center justify-center rounded-lg text-[13px] font-semibold transition ${
             mode === "criar" ? "bg-white text-brand-700 shadow-card" : "text-ink-500"
           }`}
         >
@@ -90,7 +90,7 @@ export function AccountSyncCard({
             setError(null);
             setNotice(null);
           }}
-          className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+          className={`flex min-h-10 flex-1 items-center justify-center rounded-lg text-[13px] font-semibold transition ${
             mode === "entrar" ? "bg-white text-brand-700 shadow-card" : "text-ink-500"
           }`}
         >
@@ -105,7 +105,7 @@ export function AccountSyncCard({
           placeholder="seu-email@exemplo.com"
           value={emailInput}
           onChange={(e) => setEmailInput(e.target.value)}
-          className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+          className="field"
         />
         <input
           type="password"
@@ -114,16 +114,16 @@ export function AccountSyncCard({
           placeholder="Senha (mín. 6 caracteres)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm outline-none focus:border-brand-400"
+          className="field"
         />
 
         {error && (
-          <p className="rounded-xl bg-coral-500/10 px-3 py-2 text-xs font-medium text-coral-500">
+          <p className="rounded-xl bg-coral-50 px-3 py-2.5 text-[13px] font-medium text-coral-500">
             {error}
           </p>
         )}
         {notice && (
-          <p className="rounded-xl bg-brand-100 px-3 py-2 text-xs font-medium text-brand-700">
+          <p className="rounded-xl bg-brand-50 px-3 py-2.5 text-[13px] font-medium text-brand-700">
             {notice}
           </p>
         )}
@@ -131,14 +131,14 @@ export function AccountSyncCard({
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-2xl bg-brand-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+          className="btn-primary w-full"
         >
           {loading ? "Aguarde..." : mode === "criar" ? "Criar login" : "Entrar"}
         </button>
       </form>
 
       {mode === "entrar" && (
-        <p className="mt-2 text-[11px] text-ink-400">
+        <p className="caption mt-2">
           Atenção: ao entrar em uma conta existente, os dados anônimos deste navegador (se houver)
           deixam de aparecer — você passa a ver os dados da conta em que entrou.
         </p>

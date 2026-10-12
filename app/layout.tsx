@@ -5,7 +5,7 @@ import "./globals.css";
 const sans = Sora({
   subsets: ["latin"],
   variable: "--font-sans",
-  weight: ["500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -18,7 +18,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#0D7749",
+  themeColor: "#F6F8F7",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

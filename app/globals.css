@@ -5,9 +5,91 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    scrollbar-color: theme("colors.ink.200") transparent;
+    scrollbar-width: thin;
   }
   body {
     @apply bg-ink-50 text-ink-900 antialiased;
+    /* números sempre alinhados: valores em coluna não "dançam" */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+  ::selection {
+    @apply bg-brand-200 text-ink-900;
+  }
+  input,
+  select,
+  textarea {
+    caret-color: theme("colors.brand.600");
+  }
+  /* foco visível só pra teclado; toque/mouse não ganham anel */
+  :focus-visible {
+    outline: 2px solid theme("colors.brand.500");
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* ---- botões: mesma forma em todo o app, alvo mínimo de 44px ---- */
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-[15px] font-semibold transition duration-150 ease-out-expo active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  }
+  .btn-secondary {
+    @apply btn bg-ink-100 text-ink-800 hover:bg-ink-200;
+  }
+  .btn-danger {
+    @apply btn bg-coral-50 text-coral-500 hover:bg-coral-100;
+  }
+  /* "+ Adicionar": ação de criar no fim das listas */
+  .btn-add {
+    @apply btn w-full border-2 border-dashed bg-transparent;
+  }
+
+  /* ---- campos: 16px evita o zoom automático do Safari no iPhone ---- */
+  .field {
+    @apply min-h-11 w-full rounded-xl border border-ink-200 bg-white px-3.5 text-base text-ink-900 outline-none transition duration-150 placeholder:text-ink-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+  }
+  .field-label {
+    @apply block px-0.5 pb-1 text-[13px] font-medium text-ink-500;
+  }
+
+  /* ---- ícone clicável (editar/remover): ícone pequeno, área de 44px ---- */
+  .icon-btn {
+    @apply -m-2.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-400 transition duration-150 hover:bg-ink-100 hover:text-ink-700 active:scale-95;
+  }
+
+  /* ---- pílula de estado (Pendente / Pago / Recebido) ---- */
+  .status-pill {
+    @apply inline-flex min-h-10 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold transition duration-150 active:scale-95;
+  }
+
+  /* ---- títulos de seção e grupos de lista ---- */
+  .section-title {
+    @apply text-[17px] font-bold tracking-tight text-ink-900;
+  }
+  .group-label {
+    @apply px-1 text-[13px] font-semibold text-ink-500;
+  }
+  .caption {
+    @apply text-xs text-ink-500;
   }
 }
 

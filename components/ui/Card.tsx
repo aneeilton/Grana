@@ -26,12 +26,22 @@ export function EmptyState({
   hint?: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-ink-100 bg-white/60 px-6 py-10 text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ink-100 text-ink-500">
-        <Icon size={20} strokeWidth={1.75} />
+    <div className="flex flex-col items-center gap-2 rounded-3xl bg-white px-6 py-10 text-center shadow-card">
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink-100 text-ink-500">
+        <Icon size={22} strokeWidth={1.75} aria-hidden />
       </span>
-      <p className="text-sm font-semibold text-ink-700">{title}</p>
-      {hint && <p className="text-xs text-ink-400">{hint}</p>}
+      <p className="text-[15px] font-semibold text-ink-800">{title}</p>
+      {hint && <p className="max-w-[16rem] text-[13px] text-ink-500">{hint}</p>}
+    </div>
+  );
+}
+
+/** Título de seção com ação opcional à direita (ex: "Ver mais"). */
+export function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
+  return (
+    <div className="mb-2 flex min-h-8 items-end justify-between gap-3 px-1">
+      <h2 className="section-title">{title}</h2>
+      {action}
     </div>
   );
 }

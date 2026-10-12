@@ -30,24 +30,24 @@ export function MaisScreen({
 
   return (
     <div>
-      <TopHeader icon={Sparkles} title="Mais" subtitle="Configurações e categorias" />
+      <TopHeader icon={Sparkles} title="Mais" subtitle="Conta e configurações" />
 
       <div className="space-y-4 px-4 pt-1">
         <AccountSyncCard isAnonymous={isAnonymous} email={email} />
 
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">
+          <p className="text-[13px] font-semibold text-ink-500">
             ID desta sessão
           </p>
-          <p className="mt-1 break-all font-mono text-xs text-ink-600">{userId ?? "—"}</p>
-          <p className="mt-1 text-[11px] text-ink-400">
+          <p className="mt-1 break-all font-mono text-[13px] text-ink-800 selection:bg-brand-200">{userId ?? "—"}</p>
+          <p className="caption mt-1">
             Compare com a coluna "user_id" no Supabase se os dados não estiverem aparecendo — se
             for diferente, os dados foram importados para outra conta.
           </p>
           {userId && (
             <button
               onClick={copiarId}
-              className="mt-2 rounded-xl bg-ink-100 px-3 py-1.5 text-xs font-bold text-ink-700"
+              className="btn-secondary mt-3 min-h-10 px-3 text-[13px]"
             >
               {copied ? "Copiado!" : "Copiar ID"}
             </button>

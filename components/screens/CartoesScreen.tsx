@@ -2,14 +2,15 @@
 
 import { useMemo } from "react";
 import { CreditCard } from "lucide-react";
-import { Card, EmptyState } from "@/components/ui/Card";
+import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
+import { SummaryCard } from "@/components/ui/SummaryCard";
 import { currentCompetencia, formatMoney } from "@/lib/format";
 import { valoresEfetivosPorItem } from "@/lib/projection";
 import { comprasPorCartao, saldoDevedorCartao } from "@/lib/cartoes";
 import type { Item, Lancamento } from "@/lib/types";
 
 function usoCor(pct: number) {
-  return pct >= 0.9 ? "bg-coral-500" : pct >= 0.7 ? "bg-sun-500" : "bg-brand-600";
+  return pct >= 0.9 ? "bg-coral-500" : pct >= 0.7 ? "bg-sun-400" : "bg-grape-600";
 }
 
 export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancamentos: Lancamento[] }) {
@@ -56,68 +57,65 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
   }
 
   return (
-    <div className="space-y-4 px-4">
-      <Card className="bg-gradient-to-br from-grape-600 to-grape-900 text-white">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Limite geral</p>
-        <p className="mt-1 text-3xl font-extrabold [font-variant-numeric:tabular-nums]">{formatMoney(limiteGeral)}</p>
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/20">
-          <div className={`h-full rounded-full ${usoCor(pctGeral)}`} style={{ width: `${pctGeral * 100}%` }} />
-        </div>
-        <p className="mt-2 text-sm font-semibold text-white/90">
-          {formatMoney(usadoGeral)} usados · {Math.round(pctGeral * 100)}%
-        </p>
+    <div className="space-y-6 px-4">
+      {/* Saldo devedor = tudo em aberto do cartão (fatura atual, parcelas e
+          faturas futuras já lançadas) -- o mesmo "usado" do limite. */}
+      <SummaryCard
+        tone="grape"
+        title="Limite geral"
+        value={formatMoney(limiteGeral)}
+        progress={pctGeral}
+        progressLabel={`${formatMoney(usadoGeral)} usados · ${Math.round(pctGeral * 100)}%`}
+        rowsTitle="Saldo devedor por cartão (inclui parcelas futuras)"
+        rows={[...linhas]
+          .sort((a, b) => b.usado - a.usado)
+          .map((c) => ({ id: c.id, label: c.nome, value: formatMoney(c.usado), muted: c.usado === 0 }))}
+        totalLabel="Total devedor"
+        totalValue={formatMoney(usadoGeral)}
+      />
 
-        {/* Saldo devedor = fatura deste mês ainda em aberto + parcelas
-            futuras não pagas (o mesmo "usado" do limite de cada cartão). */}
-        <div className="mt-4 border-t border-white/15 pt-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-            Saldo devedor por cartão (inclui parcelas futuras)
-          </p>
-          <div className="mt-1.5 space-y-1.5">
-            {[...linhas]
-              .sort((a, b) => b.usado - a.usado)
-              .map((c) => (
-                <div key={c.id} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="truncate text-white/90">{c.nome}</span>
-                  <span className="shrink-0 font-bold [font-variant-numeric:tabular-nums]">
-                    {formatMoney(c.usado)}
+      <section>
+        <SectionHeader title="Uso do limite" />
+        <Card className="p-0">
+          <ul className="divide-y divide-ink-100">
+            {linhas.map((c) => (
+              <li key={c.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-grape-100 text-grape-500">
+                      <CreditCard size={17} strokeWidth={2} aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-medium text-ink-900">{c.nome}</p>
+                      <p className="caption">
+                        {formatMoney(c.usado)} de {c.limite ? formatMoney(c.limite) : "limite não informado"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[15px] font-semibold text-ink-900">
+                    {c.limite ? `${Math.round(c.pct * 100)}%` : "—"}
                   </span>
                 </div>
-              ))}
-            <div className="flex items-center justify-between gap-3 border-t border-white/15 pt-1.5 text-sm">
-              <span className="font-semibold text-white/80">Total devedor</span>
-              <span className="shrink-0 font-extrabold [font-variant-numeric:tabular-nums]">
-                {formatMoney(usadoGeral)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <div className="space-y-2">
-        <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Por cartão</p>
-        {linhas.map((c) => (
-          <Card key={c.id}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-grape-500/10 text-grape-500">
-                  <CreditCard size={16} strokeWidth={2} />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-ink-800">{c.nome}</p>
-                  <p className="text-xs text-ink-400">
-                    {formatMoney(c.usado)} de {formatMoney(c.limite ?? 0)}
-                  </p>
-                </div>
-              </div>
-              <span className="shrink-0 text-sm font-bold text-ink-700">{Math.round(c.pct * 100)}%</span>
-            </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
-              <div className={`h-full rounded-full ${usoCor(c.pct)}`} style={{ width: `${c.pct * 100}%` }} />
-            </div>
-          </Card>
-        ))}
-      </div>
+                {c.limite ? (
+                  <div
+                    className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-ink-100"
+                    role="progressbar"
+                    aria-label={`Uso do limite de ${c.nome}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(c.pct * 100)}
+                  >
+                    <div
+                      className={`h-full rounded-full transition-[width] duration-500 ease-out-expo ${usoCor(c.pct)}`}
+                      style={{ width: `${c.pct * 100}%` }}
+                    />
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </section>
     </div>
   );
 }

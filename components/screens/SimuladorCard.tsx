@@ -89,7 +89,7 @@ export function SimuladorCard({
   }
 
   const inputCls =
-    "w-full rounded-2xl border border-ink-100 bg-ink-50 px-3 py-2.5 text-sm outline-none focus:border-brand-400";
+    "field";
 
   return (
     <Card>
@@ -99,12 +99,12 @@ export function SimuladorCard({
             <FlaskConical size={17} strokeWidth={2.25} />
           </span>
           <div>
-            <p className="text-sm font-bold text-ink-800">E se…?</p>
-            <p className="text-[11px] text-ink-400">Simulação, não altera seus lançamentos</p>
+            <p className="text-[17px] font-semibold text-ink-900">E se…?</p>
+            <p className="caption">Simulação, não altera seus lançamentos</p>
           </div>
         </div>
         {ativo && (
-          <button onClick={limpar} className="flex items-center gap-1 text-xs font-bold text-ink-500">
+          <button onClick={limpar} className="btn -my-1.5 min-h-10 px-3 text-[13px] text-ink-700 hover:bg-ink-100">
             <RotateCcw size={13} strokeWidth={2.5} />
             Limpar
           </button>
@@ -121,7 +121,7 @@ export function SimuladorCard({
                 <button
                   key={item.id}
                   onClick={() => alternar(item.id)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                  className={`inline-flex min-h-9 items-center rounded-full px-3 text-[13px] font-medium transition active:scale-95 ${
                     on ? "bg-coral-500 text-white line-through" : "bg-ink-100 text-ink-700"
                   }`}
                 >
@@ -169,13 +169,13 @@ export function SimuladorCard({
               Saldo em {monthYearLabel(ultimo.competencia)}
             </p>
             <p
-              className={`text-xl font-extrabold [font-variant-numeric:tabular-nums] ${
+              className={`text-xl font-bold ${
                 ultimo.saldoFinal >= 0 ? "text-ink-800" : "text-coral-500"
               }`}
             >
               {formatMoney(ultimo.saldoFinal)}
             </p>
-            <p className={`text-xs font-bold ${ultimo.diferenca >= 0 ? "text-brand-700" : "text-coral-500"}`}>
+            <p className={`text-[13px] font-semibold ${ultimo.diferenca >= 0 ? "text-brand-700" : "text-coral-500"}`}>
               {ultimo.diferenca >= 0 ? "+" : "−"}
               {formatMoney(Math.abs(ultimo.diferenca))} em relação ao previsto
             </p>
@@ -192,13 +192,13 @@ export function SimuladorCard({
 
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-[11px] text-ink-400">
+              <tr className="caption">
                 <th className="py-1 text-left font-semibold">Mês</th>
                 <th className="py-1 text-right font-semibold">Previsto</th>
                 <th className="py-1 text-right font-semibold">Simulado</th>
               </tr>
             </thead>
-            <tbody className="[font-variant-numeric:tabular-nums]">
+            <tbody className="">
               {simulado.map((m, idx) => (
                 <tr key={m.competencia} className="border-t border-ink-100">
                   <td className="py-1.5 font-semibold text-ink-700">{monthLabel(m.competencia)}</td>
