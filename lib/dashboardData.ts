@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Bem, Conta, Divida, GastoDiario, Item, Lancamento } from "@/lib/types";
+import type { Bem, Consorcio, Conta, Divida, GastoDiario, Item, Lancamento } from "@/lib/types";
+import { currentCompetencia } from "@/lib/format";
+import { dividaConsorcios, resumirConsorcios } from "@/lib/consorcios";
 
 export type FinanceSnapshot = {
   contas: Conta[];
@@ -13,6 +15,7 @@ export type FinanceSnapshot = {
   saldoContas: number;
   totalAplicado: number;
   totalDividas: number;
+  dividaConsorcio: number;
   totalBens: number;
 };
 
@@ -58,6 +61,15 @@ export async function loadFinanceSnapshot(): Promise<FinanceSnapshotResult> {
   const dividas = (dividasRes.data ?? []) as Divida[];
   const bens = (bensRes.data ?? []) as Bem[];
 
+  // Consórcio contemplado: saldo devedor (parcelas em aberto) entra como
+  // dívida. Tabela pode não existir ainda (antes da 0013) -- aí ignora.
+  const { data: consorciosData, error: consorciosError } = await supabase.from("consorcios").select("*");
+  const dividaConsorcio = consorciosError
+    ? 0
+    : dividaConsorcios(
+        resumirConsorcios((consorciosData ?? []) as Consorcio[], items, lancamentos, currentCompetencia())
+      );
+
   return {
     ok: true,
     data: {
@@ -71,7 +83,8 @@ export async function loadFinanceSnapshot(): Promise<FinanceSnapshotResult> {
       contaPadraoId: configRes.data?.[0]?.conta_padrao_id ?? null,
       saldoContas: contas.reduce((s, c) => s + Number(c.saldo_corrente), 0),
       totalAplicado: contas.reduce((s, c) => s + Number(c.saldo_aplicado), 0),
-      totalDividas: dividas.reduce((s, d) => s + Number(d.valor), 0),
+      totalDividas: dividas.reduce((s, d) => s + Number(d.valor), 0) + dividaConsorcio,
+      dividaConsorcio,
       totalBens: bens.reduce((s, b) => s + Number(b.valor), 0),
     },
   };

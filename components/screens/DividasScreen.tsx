@@ -10,10 +10,12 @@ import type { Divida, DividaTipo } from "@/lib/types";
 
 export function DividasScreen({
   initialDividas,
+  dividaConsorcio = 0,
   hideHeader,
   onTotalChange,
 }: {
   initialDividas: Divida[];
+  dividaConsorcio?: number;
   hideHeader?: boolean;
   onTotalChange?: (total: number) => void;
 }) {
@@ -102,13 +104,13 @@ export function DividasScreen({
     <div>
       {hideHeader ? (
         <p className="px-4 pb-2 text-sm text-ink-500">
-          Total · <span className="font-bold text-ink-800">{formatMoney(totalCurto + totalLongo)}</span>
+          Total · <span className="font-bold text-ink-800">{formatMoney(totalCurto + totalLongo + dividaConsorcio)}</span>
         </p>
       ) : (
         <TopHeader
           icon={FileWarning}
           title="Dívidas"
-          subtitle={`Total ${formatMoney(totalCurto + totalLongo)}`}
+          subtitle={`Total ${formatMoney(totalCurto + totalLongo + dividaConsorcio)}`}
         />
       )}
 
@@ -124,9 +126,15 @@ export function DividasScreen({
             <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
               Longo prazo
             </p>
-            <p className="text-lg font-extrabold">{formatMoney(totalLongo)}</p>
+            <p className="text-lg font-extrabold">{formatMoney(totalLongo + dividaConsorcio)}</p>
           </Card>
         </div>
+        {dividaConsorcio > 0 && (
+          <p className="px-1 text-[11px] text-ink-500">
+            Longo prazo inclui {formatMoney(dividaConsorcio)} de consórcio contemplado (parcelas em aberto),
+            calculado automaticamente na aba Fluxo → Consórcio.
+          </p>
+        )}
 
         {dividas.length === 0 ? (
           <EmptyState icon={PartyPopper} title="Nenhuma dívida cadastrada" hint="Ótimo sinal!" />

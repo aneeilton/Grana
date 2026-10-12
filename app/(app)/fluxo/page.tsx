@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { FluxoScreen } from "@/components/screens/FluxoScreen";
 import { PageError } from "@/components/ui/PageError";
 import { loadContaPadrao } from "@/lib/contaPadrao";
+import { loadConsorcios } from "@/lib/consorcioData";
 import type { Item, Lancamento } from "@/lib/types";
 
 async function loadTipo(tipo: "receita" | "despesa") {
@@ -33,7 +34,7 @@ export default async function FluxoPage() {
   if (receita.error) return <PageError error={receita.error} />;
   if (despesa.error) return <PageError error={despesa.error} />;
 
-  const { contas, contaPadraoId } = await loadContaPadrao();
+  const [{ contas, contaPadraoId }, { consorcios }] = await Promise.all([loadContaPadrao(), loadConsorcios()]);
 
   return (
     <FluxoScreen
@@ -41,6 +42,7 @@ export default async function FluxoPage() {
       despesa={{ items: despesa.items!, lancamentos: despesa.lancamentos! }}
       contas={contas}
       contaPadraoId={contaPadraoId}
+      consorcios={consorcios}
     />
   );
 }

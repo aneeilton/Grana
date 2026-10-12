@@ -43,6 +43,7 @@ export type Item = {
   parcelas_total: number | null;
   cartao_id: string | null; // compra feita nesse cartão (soma na fatura dele)
   meses_recorrencia: number[] | null; // anual/sazonal: meses do ano (1-12) em que o item ocorre
+  consorcio_id: string | null; // parcela (ou lance) de um consórcio
   created_at: string;
 };
 
@@ -69,5 +70,21 @@ export type GastoDiario = {
   categoria: string;
   descricao: string | null;
   valor: number;
+  created_at: string;
+};
+
+export type LanceStatus = "intencao" | "aceito";
+
+export type Consorcio = {
+  id: string;
+  user_id: string;
+  nome: string;
+  carta: number;
+  taxa_adm: number | null;
+  contemplado: boolean;
+  lance_valor: number | null;
+  lance_competencia: string | null; // YYYY-MM-01
+  lance_parcela: number | null; // parcela depois do lance
+  lance_status: LanceStatus | null;
   created_at: string;
 };

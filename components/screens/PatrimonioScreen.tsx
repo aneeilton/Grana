@@ -23,11 +23,13 @@ export function PatrimonioScreen({
   initialContaPadraoId,
   initialDividas,
   initialBens,
+  dividaConsorcio,
 }: {
   initialContas: Conta[];
   initialContaPadraoId: string | null;
   initialDividas: Divida[];
   initialBens: Bem[];
+  dividaConsorcio: number;
 }) {
   const [aba, setAba] = useState<Aba>("contas");
 
@@ -43,7 +45,7 @@ export function PatrimonioScreen({
   );
 
   const patrimonioLiquido =
-    contasTotal.corrente + contasTotal.aplicado + bensTotal - dividasTotal;
+    contasTotal.corrente + contasTotal.aplicado + bensTotal - dividasTotal - dividaConsorcio;
 
   return (
     <div>
@@ -89,7 +91,12 @@ export function PatrimonioScreen({
         />
       </div>
       <div className={aba === "dividas" ? "" : "hidden"}>
-        <DividasScreen initialDividas={initialDividas} hideHeader onTotalChange={setDividasTotal} />
+        <DividasScreen
+          initialDividas={initialDividas}
+          dividaConsorcio={dividaConsorcio}
+          hideHeader
+          onTotalChange={setDividasTotal}
+        />
       </div>
       <div className={aba === "bens" ? "" : "hidden"}>
         <BensScreen initialBens={initialBens} hideHeader onTotalChange={setBensTotal} />

@@ -201,7 +201,11 @@ export function MonthlyItemsScreen({
     [itemsVisiveis, lancamentos]
   );
   const itemsParcelados = useMemo(
-    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.fixo && !ehSazonal(i) && i.parcelas_total)),
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.consorcio_id && !i.fixo && !ehSazonal(i) && i.parcelas_total)),
+    [itemsVisiveis, lancamentos]
+  );
+  const itemsConsorcio = useMemo(
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => i.consorcio_id)),
     [itemsVisiveis, lancamentos]
   );
   const itemsSazonais = useMemo(
@@ -209,7 +213,7 @@ export function MonthlyItemsScreen({
     [itemsVisiveis, lancamentos]
   );
   const itemsPontuais = useMemo(
-    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.fixo && !ehSazonal(i) && !i.parcelas_total)),
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.consorcio_id && !i.fixo && !ehSazonal(i) && !i.parcelas_total)),
     [itemsVisiveis, lancamentos]
   );
 
@@ -865,6 +869,12 @@ export function MonthlyItemsScreen({
               <div className="space-y-2">
                 <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Parceladas</p>
                 {itemsParcelados.map(renderItem)}
+              </div>
+            )}
+            {itemsConsorcio.length > 0 && (
+              <div className="space-y-2">
+                <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">Consórcios</p>
+                {itemsConsorcio.map(renderItem)}
               </div>
             )}
             {itemsSazonais.length > 0 && (

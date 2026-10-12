@@ -10,6 +10,7 @@ import type { Item, Lancamento } from "@/lib/types";
 type Linha = { id: string; nome: string; detalhe?: string; valores: (number | null)[]; parcelas: (string | null)[] };
 
 function detalheDoItem(item: Item, nomeCartao?: string): string | undefined {
+  if (item.consorcio_id) return "consórcio";
   if (nomeCartao) return item.parcelas_total ? `${item.parcelas_total}x · ${nomeCartao}` : nomeCartao;
   if (item.meses_recorrencia?.length && !item.fixo) return item.meses_recorrencia.length === 1 ? "anual" : "sazonal";
   if (item.cartao) return "cartão";
