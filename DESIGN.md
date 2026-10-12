@@ -14,7 +14,8 @@ Fonte do sistema (`-apple-system` …): SF Pro no iPhone/Mac, Segoe UI no Window
 - Corpo e linhas: 15–17px
 - Cabeçalho de grupo de lista: 13px, caixa alta, cinza (`.group-label`), como nas listas agrupadas do iOS
 - Legendas: 13px cinza (`.caption`)
-- Campos: 16px (sem zoom automático do Safari)
+- Campos: 16px (sem zoom automático do Safari). Parados têm preenchimento cinza leve e sem borda; ao tocar ganham fundo de superfície e anel azul.
+- Dinheiro: sempre `MoneyInput` (formato 1.726,00, digitação tipo maquininha pelos centavos; "-" deixa negativo).
 - Rótulo da barra de abas: 10px (padrão do iOS)
 
 ## Cor (sistema iOS, claro e escuro)
@@ -44,7 +45,8 @@ Cada família tem um tom de preenchimento (o system color) e um tom de texto mai
 - Botões em cápsula (`.btn-primary` azul, `.btn-secondary` cinza com texto azul, `.btn-danger`), alvo mínimo de 44px.
 - `.btn-add`: botão branco com texto azul no fim das listas.
 - Controle segmentado (`Segmented`): trilho cinza, segmento branco elevado.
-- Barra de abas translúcida, ícone preenchido e azul na aba atual.
+- Barra de abas translúcida, ícone preenchido e azul na aba atual. Some ao rolar pra baixo e volta ao rolar pra cima.
+- Card de resumo compacto (28px no valor, linhas de 14px); listas com mais de 4 itens ficam recolhidas com "Ver todos".
 - Ícones: Phosphor (equivalente livre aos SF Symbols), via `components/ui/icons.tsx`.
 - Excluir sempre pede confirmação.
 

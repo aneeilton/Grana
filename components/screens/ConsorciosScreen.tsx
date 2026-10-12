@@ -1,5 +1,6 @@
 "use client";
 
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useMemo, useState } from "react";
 import { BadgeCheck, CarFront, Gavel, Trash2 } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
@@ -448,25 +449,19 @@ export function ConsorciosScreen({
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block space-y-1">
                     <span className="px-1 text-[11px] font-semibold text-ink-500">Valor do lance</span>
-                    <input
+                    <MoneyInput
                       autoFocus
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
                       value={lanceValor}
-                      onChange={(e) => setLanceValor(e.target.value)}
+                      onValueChange={setLanceValor}
                       className={inputCls}
                     />
                   </label>
                   <label className="block space-y-1">
                     <span className="px-1 text-[11px] font-semibold text-ink-500">Parcela pós-lance</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
+                    <MoneyInput
                       placeholder="opcional"
                       value={lanceParcela}
-                      onChange={(e) => setLanceParcela(e.target.value)}
+                      onValueChange={setLanceParcela}
                       className={inputCls}
                     />
                   </label>
@@ -516,9 +511,9 @@ export function ConsorciosScreen({
           <p className="text-[13px] font-semibold text-ink-400">Novo consórcio</p>
           <input autoFocus placeholder="Nome (ex: Carro cota 1)" value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} />
           <div className="grid grid-cols-2 gap-2">
-            <input type="number" inputMode="decimal" step="0.01" placeholder="Valor da carta" value={carta} onChange={(e) => setCarta(e.target.value)} className={inputCls} />
+            <MoneyInput placeholder="Valor da carta" value={carta} onValueChange={setCarta} className={inputCls} />
             <input type="number" inputMode="decimal" step="0.01" placeholder="Taxa adm (%)" value={taxa} onChange={(e) => setTaxa(e.target.value)} className={inputCls} />
-            <input type="number" inputMode="decimal" step="0.01" placeholder="Parcela atual" value={parcela} onChange={(e) => setParcela(e.target.value)} className={inputCls} />
+            <MoneyInput placeholder="Parcela atual" value={parcela} onValueChange={setParcela} className={inputCls} />
             <input type="number" inputMode="numeric" min={2} placeholder="Parcelas a vencer" value={restantes} onChange={(e) => setRestantes(e.target.value)} className={inputCls} />
             <input type="number" min={1} max={31} placeholder="Dia de vencimento" value={dia} onChange={(e) => setDia(e.target.value)} className={inputCls} />
           </div>

@@ -26,6 +26,7 @@ import { MonthBars, type MonthBar } from "@/components/ui/MonthBars";
 import { buildMonthlyProjection, mesCritico, valoresEfetivosPorItem } from "@/lib/projection";
 import { comprasPorCartao, rotuloParcela, totalComprasNoMes } from "@/lib/cartoes";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
+import type { Compromissos } from "@/lib/compromissos";
 import type { Conta, GastoDiario, Item, Lancamento } from "@/lib/types";
 
 export function DashboardScreen({
@@ -37,6 +38,7 @@ export function DashboardScreen({
   totalAplicado,
   totalDividas,
   totalBens,
+  compromissos,
 }: {
   items: Item[];
   initialLancamentos: Lancamento[];
@@ -46,6 +48,7 @@ export function DashboardScreen({
   totalAplicado: number;
   totalDividas: number;
   totalBens: number;
+  compromissos: Compromissos;
 }) {
   const supabase = createClient();
   const [competencia, setCompetencia] = useState(currentCompetencia());
@@ -88,7 +91,12 @@ export function DashboardScreen({
     [contas]
   );
   const saldoAtual = saldoContas + totalAplicado;
-  const patrimonioLiquido = saldoAtual + totalBens - totalDividas;
+  // Patrimônio líquido desconta também o que já está comprometido:
+  // cartões + despesas fixas e pontuais em aberto dos próximos 6 meses.
+  const patrimonioLiquido = saldoAtual + totalBens - totalDividas - compromissos.total;
+  // Dívida "de verdade" (cadastradas + consórcio contemplado + cartões),
+  // sem as despesas futuras -- é o que pesa na nota de saúde.
+  const dividaReal = totalDividas + compromissos.cartoes;
 
   const series = useMemo(
     () =>
@@ -320,9 +328,9 @@ export function DashboardScreen({
       parcelasPct: receitas > 0 ? (parcelas / receitas) * 100 : 0,
       parcelasMes: proximoSemestre.length ? parcelas / proximoSemestre.length : 0,
       // saldo devedor cadastrado em Dívidas, em meses de receita
-      dividasEmMeses: receitaMensal > 0 ? totalDividas / receitaMensal : null,
+      dividasEmMeses: receitaMensal > 0 ? dividaReal / receitaMensal : null,
     };
-  }, [proximoSemestre, items, lancamentos, resumoSemestre.receitas, totalDividas]);
+  }, [proximoSemestre, items, lancamentos, resumoSemestre.receitas, dividaReal]);
 
   function tomPctTexto(pct: number, atencao: number, critico: number) {
     return pct >= critico
@@ -381,7 +389,7 @@ export function DashboardScreen({
     const scorePoupanca = Math.max(0, Math.min(100, 50 + taxaPoupanca * 2.5));
 
     const patrimonioBruto = saldoAtual + totalBens;
-    const razaoDivida = patrimonioBruto > 0 ? totalDividas / patrimonioBruto : totalDividas > 0 ? 1 : 0;
+    const razaoDivida = patrimonioBruto > 0 ? dividaReal / patrimonioBruto : dividaReal > 0 ? 1 : 0;
     const scoreDivida = Math.max(0, Math.min(100, 100 - razaoDivida * 100));
 
     const componentes = [
@@ -407,7 +415,7 @@ export function DashboardScreen({
     const pior = componentes.reduce((a, b) => (b.score < a.score ? b : a));
 
     return { nota, componentes, pior };
-  }, [resumoSemestre.comprometimento, mesAtual, saldoAtual, totalBens, totalDividas]);
+  }, [resumoSemestre.comprometimento, mesAtual, saldoAtual, totalBens, dividaReal]);
 
   const notaTone =
     saudeFinanceira.nota >= 80
@@ -447,9 +455,9 @@ export function DashboardScreen({
       { label: "Contas", valor: saldoContas, bar: "bg-brand-500" },
       { label: "Investido", valor: totalAplicado, bar: "bg-grape-400" },
       { label: "Bens", valor: totalBens, bar: "bg-sun-400" },
-      { label: "Dívidas", valor: totalDividas, bar: "bg-coral-400" },
+      { label: "Compromissos", valor: totalDividas + compromissos.total, bar: "bg-coral-400" },
     ],
-    total: Math.max(0, saldoContas) + totalAplicado + totalBens + totalDividas,
+    total: Math.max(0, saldoContas) + totalAplicado + totalBens + totalDividas + compromissos.total,
   };
 
   return (
@@ -489,7 +497,7 @@ export function DashboardScreen({
             </span>
           }
         >
-          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/15 pt-3">
+          <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-white/15 pt-2">
             <div className="min-w-0">
               <dt className="text-[13px] font-medium text-white/75">A pagar</dt>
               <dd className="truncate text-[15px] font-semibold">{fmt(mesAtual.despesaPendente)}</dd>
@@ -753,9 +761,9 @@ export function DashboardScreen({
                 </div>
               ))}
             </dl>
-            {totalDividas > 0 && pesoCartoesDividas.dividasEmMeses !== null && (
+            {dividaReal > 0 && pesoCartoesDividas.dividasEmMeses !== null && (
               <p className="caption mt-3 border-t border-ink-100 pt-3">
-                As dívidas equivalem a{" "}
+                Dívidas e cartões equivalem a{" "}
                 <span className="font-semibold text-ink-900">
                   {oculto
                     ? "••"

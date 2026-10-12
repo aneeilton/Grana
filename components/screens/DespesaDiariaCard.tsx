@@ -1,5 +1,6 @@
 "use client";
 
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useMemo, useState } from "react";
 import { X } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
@@ -103,14 +104,11 @@ export function DespesaDiariaCard({
         </div>
 
         <form onSubmit={addGasto} className="mt-3 grid grid-cols-[6.5rem_1fr] gap-2">
-          <input
-            type="number"
-            step="0.01"
-            inputMode="decimal"
+          <MoneyInput
             placeholder="0,00"
             aria-label="Valor do gasto"
             value={valor}
-            onChange={(e) => setValor(e.target.value)}
+            onValueChange={setValor}
             className="field font-semibold text-coral-500"
           />
           <input

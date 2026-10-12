@@ -17,6 +17,7 @@ export default async function DashboardPage() {
       totalAplicado={data.totalAplicado}
       totalDividas={data.totalDividas}
       totalBens={data.totalBens}
+      compromissos={data.compromissos}
     />
   );
 }

@@ -9,6 +9,7 @@ import { ContasScreen } from "@/components/screens/ContasScreen";
 import { DividasScreen } from "@/components/screens/DividasScreen";
 import { BensScreen } from "@/components/screens/BensScreen";
 import { formatMoney } from "@/lib/format";
+import type { Compromissos } from "@/lib/compromissos";
 import type { Bem, Conta, Divida } from "@/lib/types";
 
 type Aba = "contas" | "dividas" | "bens";
@@ -25,12 +26,14 @@ export function PatrimonioScreen({
   initialDividas,
   initialBens,
   dividaConsorcio,
+  compromissos,
 }: {
   initialContas: Conta[];
   initialContaPadraoId: string | null;
   initialDividas: Divida[];
   initialBens: Bem[];
   dividaConsorcio: number;
+  compromissos: Compromissos;
 }) {
   const [aba, setAba] = useState<Aba>("contas");
 
@@ -46,7 +49,7 @@ export function PatrimonioScreen({
   );
 
   const patrimonioLiquido =
-    contasTotal.corrente + contasTotal.aplicado + bensTotal - dividasTotal - dividaConsorcio;
+    contasTotal.corrente + contasTotal.aplicado + bensTotal - dividasTotal - dividaConsorcio - compromissos.total;
 
   return (
     <div>
@@ -57,9 +60,9 @@ export function PatrimonioScreen({
           tone="brand"
           title="Patrimônio líquido"
           value={formatMoney(patrimonioLiquido)}
-          subtitle="Contas + aplicado + bens − dívidas"
+          subtitle="Contas + bens − dívidas e 6 meses de despesas"
         >
-          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/15 pt-3">
+          <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-white/15 pt-2">
             <div className="min-w-0">
               <dt className="text-[13px] font-medium text-white/75">Contas e aplicado</dt>
               <dd className="truncate text-[15px] font-semibold">
@@ -67,8 +70,8 @@ export function PatrimonioScreen({
               </dd>
             </div>
             <div className="min-w-0">
-              <dt className="text-[13px] font-medium text-white/75">Dívidas</dt>
-              <dd className="truncate text-[15px] font-semibold">{formatMoney(dividasTotal + dividaConsorcio)}</dd>
+              <dt className="text-[13px] font-medium text-white/75">Dívidas e compromissos</dt>
+              <dd className="truncate text-[15px] font-semibold">{formatMoney(dividasTotal + dividaConsorcio + compromissos.total)}</dd>
             </div>
           </dl>
         </SummaryCard>
@@ -97,6 +100,7 @@ export function PatrimonioScreen({
         <DividasScreen
           initialDividas={initialDividas}
           dividaConsorcio={dividaConsorcio}
+          compromissos={compromissos}
           hideHeader
           onTotalChange={setDividasTotal}
         />

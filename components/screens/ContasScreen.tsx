@@ -1,5 +1,6 @@
 "use client";
 
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useEffect, useMemo, useState } from "react";
 import { Landmark, RefreshCw, Star, Trash2 } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
@@ -294,25 +295,19 @@ export function ContasScreen({
                     <div className="grid grid-cols-2 gap-2">
                       <label className="block space-y-1">
                         <span className="px-1 text-[11px] font-semibold text-ink-500">Em conta</span>
-                        <input
+                        <MoneyInput
                           autoFocus
-                          type="number"
-                          inputMode="decimal"
-                          step="0.01"
                           value={novoCorrente}
-                          onChange={(e) => setNovoCorrente(e.target.value)}
+                          onValueChange={setNovoCorrente}
                           onFocus={(e) => e.target.select()}
                           className="field"
                         />
                       </label>
                       <label className="block space-y-1">
                         <span className="px-1 text-[11px] font-semibold text-ink-500">Aplicado</span>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          step="0.01"
+                        <MoneyInput
                           value={novoAplicado}
-                          onChange={(e) => setNovoAplicado(e.target.value)}
+                          onValueChange={setNovoAplicado}
                           onFocus={(e) => e.target.select()}
                           className="field"
                         />
@@ -369,33 +364,25 @@ export function ContasScreen({
               className="field"
             />
             <div className="grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                step="0.01"
+              <MoneyInput
                 placeholder="Saldo em conta"
                 value={corrente}
-                onChange={(e) => setCorrente(e.target.value)}
+                onValueChange={setCorrente}
                 className="field"
               />
-              <input
-                type="number"
-                step="0.01"
+              <MoneyInput
                 placeholder="Aplicado"
                 value={aplicado}
-                onChange={(e) => setAplicado(e.target.value)}
+                onValueChange={setAplicado}
                 className="field"
               />
             </div>
             <label className="block space-y-1">
               <span className="px-1 text-[11px] font-semibold text-ink-500">Limite da conta / cheque especial (opcional)</span>
-              <input
-                type="number"
-                step="0.01"
-                min={0}
-                inputMode="decimal"
+              <MoneyInput
                 placeholder="0,00"
                 value={limiteConta}
-                onChange={(e) => setLimiteConta(e.target.value)}
+                onValueChange={setLimiteConta}
                 className="field"
               />
             </label>

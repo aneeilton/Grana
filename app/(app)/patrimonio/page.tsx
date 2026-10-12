@@ -5,7 +5,8 @@ import { loadContaPadrao } from "@/lib/contaPadrao";
 import { loadConsorcios } from "@/lib/consorcioData";
 import { dividaConsorcios, resumirConsorcios } from "@/lib/consorcios";
 import { currentCompetencia } from "@/lib/format";
-import type { Bem, Divida } from "@/lib/types";
+import { calcularCompromissos } from "@/lib/compromissos";
+import type { Bem, Divida, Item, Lancamento } from "@/lib/types";
 
 export default async function PatrimonioPage() {
   const supabase = createClient();
@@ -14,16 +15,22 @@ export default async function PatrimonioPage() {
     { data: dividas, error: dividasError },
     { data: bens, error: bensError },
     consorcios,
+    { data: items, error: itemsError },
+    { data: lancamentos, error: lancamentosError },
   ] =
     await Promise.all([
       loadContaPadrao(),
       supabase.from("dividas").select("*").order("created_at", { ascending: true }),
       supabase.from("bens").select("*").order("created_at", { ascending: true }),
       loadConsorcios(),
+      supabase.from("items").select("*"),
+      supabase.from("lancamentos").select("*"),
     ]);
 
   if (dividasError) return <PageError error={dividasError} />;
   if (bensError) return <PageError error={bensError} />;
+  if (itemsError) return <PageError error={itemsError} />;
+  if (lancamentosError) return <PageError error={lancamentosError} />;
 
   return (
     <PatrimonioScreen
@@ -31,6 +38,7 @@ export default async function PatrimonioPage() {
       initialContaPadraoId={contaPadraoId}
       initialDividas={(dividas ?? []) as Divida[]}
       initialBens={(bens ?? []) as Bem[]}
+      compromissos={calcularCompromissos((items ?? []) as Item[], (lancamentos ?? []) as Lancamento[])}
       dividaConsorcio={dividaConsorcios(
         resumirConsorcios(consorcios.consorcios, consorcios.items, consorcios.lancamentos, currentCompetencia())
       )}

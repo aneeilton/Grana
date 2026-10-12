@@ -1,5 +1,6 @@
 "use client";
 
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useEffect, useMemo, useState } from "react";
 import { Gem, Trash2 } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
@@ -142,12 +143,10 @@ export function BensScreen({
               onChange={(e) => setNome(e.target.value)}
               className="field"
             />
-            <input
-              type="number"
-              step="0.01"
+            <MoneyInput
               placeholder="Valor estimado"
               value={valor}
-              onChange={(e) => setValor(e.target.value)}
+              onValueChange={setValor}
               className="field"
             />
             {error && <p className="text-xs font-medium text-coral-500">Erro: {error}</p>}

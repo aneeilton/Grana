@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type ReactNode } from "react";
 
 /**
  * Card de resumo colorido do topo das telas (saldo, receitas, despesas,
@@ -55,17 +57,23 @@ export function SummaryCard({
   totalValue?: ReactNode;
   children?: ReactNode;
 }) {
+  // lista longa fica recolhida: o card não toma a tela inteira
+  const LIMITE = 4;
+  const [todas, setTodas] = useState(false);
+  const visiveis = rows && !todas ? rows.slice(0, LIMITE) : rows;
+  const escondidas = (rows?.length ?? 0) - (visiveis?.length ?? 0);
+
   return (
-    <section className={`rounded-3xl ${TONES[tone]} p-5 text-white`}>
+    <section className={`rounded-3xl ${TONES[tone]} px-4 py-3.5 text-white`}>
       <p className="text-[13px] font-medium text-white/75">{title}</p>
-      <p className="mt-1.5 text-[34px] font-bold leading-none tracking-[-0.02em]">
+      <p className="mt-1 text-[28px] font-bold leading-none tracking-[-0.02em]">
         {value}
-        {valueSuffix && <span className="ml-1 text-[17px] font-semibold text-white/70">{valueSuffix}</span>}
+        {valueSuffix && <span className="ml-1 text-[15px] font-semibold text-white/70">{valueSuffix}</span>}
       </p>
-      {subtitle && <div className="mt-2 text-[13px] font-medium text-white/85">{subtitle}</div>}
+      {subtitle && <div className="mt-1.5 text-[13px] font-medium text-white/85">{subtitle}</div>}
 
       {progress !== undefined && (
-        <div className="mt-4">
+        <div className="mt-3">
           <div
             className="h-1.5 w-full overflow-hidden rounded-full bg-white/20"
             role="progressbar"
@@ -78,16 +86,16 @@ export function SummaryCard({
               style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }}
             />
           </div>
-          {progressLabel && <p className="mt-2 text-[13px] font-medium text-white/85">{progressLabel}</p>}
+          {progressLabel && <p className="mt-1.5 text-[12px] font-medium text-white/85">{progressLabel}</p>}
         </div>
       )}
 
       {rows && rows.length > 0 && (
-        <div className="mt-4 border-t border-white/15 pt-3">
-          {rowsTitle && <p className="pb-1 text-[13px] font-medium text-white/75">{rowsTitle}</p>}
+        <div className="mt-3 border-t border-white/15 pt-2">
+          {rowsTitle && <p className="pb-0.5 text-[12px] font-medium text-white/75">{rowsTitle}</p>}
           <ul className="divide-y divide-white/10">
-            {rows.map((r) => (
-              <li key={r.id} className="flex min-h-9 items-center justify-between gap-3 py-1.5 text-[15px]">
+            {visiveis!.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-1 text-[14px] leading-snug">
                 <span className={`flex min-w-0 items-center gap-1.5 ${r.muted ? "text-white/55" : "text-white/90"}`}>
                   {r.icon}
                   <span className="truncate">{r.label}</span>
@@ -96,8 +104,17 @@ export function SummaryCard({
               </li>
             ))}
           </ul>
+          {(escondidas > 0 || todas) && rows.length > LIMITE && (
+            <button
+              type="button"
+              onClick={() => setTodas((v) => !v)}
+              className="-mx-1 mt-0.5 min-h-8 rounded-lg px-1 text-[13px] font-semibold text-white/85 active:opacity-60"
+            >
+              {todas ? "Mostrar menos" : `Ver todos (+${escondidas})`}
+            </button>
+          )}
           {totalLabel && (
-            <div className="mt-1 flex items-center justify-between gap-3 border-t border-white/20 pt-2.5 text-[15px]">
+            <div className="mt-0.5 flex items-center justify-between gap-3 border-t border-white/20 pt-1.5 text-[14px]">
               <span className="font-medium text-white/80">{totalLabel}</span>
               <span className="shrink-0 font-bold">{totalValue}</span>
             </div>

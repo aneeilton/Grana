@@ -172,7 +172,9 @@
 
   /* ---- campos: 16px evita o zoom automático do Safari no iPhone ---- */
   .field {
-    @apply min-h-11 w-full rounded-xl border border-ink-200 bg-surface px-3.5 text-base text-ink-900 outline-none transition duration-150 placeholder:text-ink-400 focus:border-accent focus:ring-4 focus:ring-accent/15;
+    /* parado: preenchimento cinza leve, sem borda (lê como valor, não como
+       formulário aberto); ao tocar ganha fundo de superfície e anel azul */
+    @apply min-h-11 w-full rounded-xl border border-transparent bg-ink-100/70 px-3.5 text-base text-ink-900 outline-none transition duration-150 placeholder:text-ink-400 focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/15;
   }
   .field-label {
     @apply block px-0.5 pb-1 text-[13px] font-medium text-ink-500;

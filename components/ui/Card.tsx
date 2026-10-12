@@ -10,7 +10,12 @@ export function Card({
   onClick?: () => void;
 }) {
   return (
-    <div className={`rounded-3xl bg-surface p-4 shadow-card ${className}`} onClick={onClick}>
+    // padding padrão só quando a tela não define o próprio (ex: "p-0" em
+    // listas) -- com os dois, quem vencia era a ordem do CSS, não a tela
+    <div
+      className={`rounded-3xl bg-surface shadow-card ${/(^|\s)p-\S+/.test(className) ? "" : "p-4"} ${className}`}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

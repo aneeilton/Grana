@@ -7,7 +7,6 @@ import { Card, SectionHeader } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { MonthBars, type MonthBar } from "@/components/ui/MonthBars";
 import { SemestreGrid } from "@/components/screens/SemestreGrid";
-import { SimuladorCard } from "@/components/screens/SimuladorCard";
 import { buildMonthlyProjection, mesCritico } from "@/lib/projection";
 import { formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
 import type { GastoDiario, Item, Lancamento } from "@/lib/types";
@@ -60,7 +59,7 @@ export function SemestreScreen({
           value={formatMoney(fechamentoFinal)}
           subtitle={`A partir do saldo atual de ${formatMoney(saldoAtual)}`}
         >
-          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/15 pt-3">
+          <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-white/15 pt-2">
             <div className="min-w-0">
               <dt className="text-[13px] font-medium text-white/75">Receitas previstas</dt>
               <dd className="truncate text-[15px] font-semibold">{formatMoney(receitaTotal)}</dd>
@@ -117,7 +116,6 @@ export function SemestreScreen({
           </Card>
         </section>
 
-        <SimuladorCard items={items} lancamentos={lancamentos} series={series} />
 
         <SemestreGrid
           items={items}

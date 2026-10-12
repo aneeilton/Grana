@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Bem, Consorcio, Conta, Divida, GastoDiario, Item, Lancamento } from "@/lib/types";
 import { currentCompetencia } from "@/lib/format";
 import { dividaConsorcios, resumirConsorcios } from "@/lib/consorcios";
+import { calcularCompromissos, type Compromissos } from "@/lib/compromissos";
 
 export type FinanceSnapshot = {
   contas: Conta[];
@@ -17,6 +18,8 @@ export type FinanceSnapshot = {
   totalDividas: number;
   dividaConsorcio: number;
   totalBens: number;
+  /** cartões + fixas + pontuais dos próximos 6 meses (saem do patrimônio) */
+  compromissos: Compromissos;
 };
 
 export type FinanceSnapshotResult =
@@ -86,6 +89,7 @@ export async function loadFinanceSnapshot(): Promise<FinanceSnapshotResult> {
       totalDividas: dividas.reduce((s, d) => s + Number(d.valor), 0) + dividaConsorcio,
       dividaConsorcio,
       totalBens: bens.reduce((s, b) => s + Number(b.valor), 0),
+      compromissos: calcularCompromissos(items, lancamentos),
     },
   };
 }

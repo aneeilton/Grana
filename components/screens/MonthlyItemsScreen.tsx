@@ -1,5 +1,6 @@
 "use client";
 
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, CreditCard, Pencil, Receipt, Repeat, Trash2, TrendingUp, Wallet } from "@/components/ui/icons";
@@ -658,13 +659,10 @@ export function MonthlyItemsScreen({
             <span aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-ink-400">
               R$
             </span>
-            <input
-              type="number"
-              step="0.01"
-              inputMode="decimal"
+            <MoneyInput
               value={drafts[item.id] ?? ""}
               placeholder={comprasDoCartao.length > 0 ? "outros gastos" : "0,00"}
-              onChange={(e) => setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))}
+              onValueChange={(v) => setDrafts((prev) => ({ ...prev, [item.id]: v }))}
               onKeyDown={(e) => {
                 if (e.key === "Enter") saveValor(item);
               }}
@@ -892,12 +890,10 @@ export function MonthlyItemsScreen({
                   É um cartão de crédito
                 </label>
                 {cartao && (
-                  <input
-                    type="number"
-                    step="0.01"
+                  <MoneyInput
                     placeholder="Limite do cartão (opcional)"
                     value={limite}
-                    onChange={(e) => setLimite(e.target.value)}
+                    onValueChange={setLimite}
                     className="field"
                   />
                 )}
@@ -997,13 +993,10 @@ export function MonthlyItemsScreen({
                   </select>
                 </label>
                 {cartaoId && (
-                  <input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
+                  <MoneyInput
                     placeholder={parcelas && Number(parcelas) > 1 ? "Valor de cada parcela" : "Valor da compra"}
                     value={valorCompra}
-                    onChange={(e) => setValorCompra(e.target.value)}
+                    onValueChange={setValorCompra}
                     className="field"
                   />
                 )}

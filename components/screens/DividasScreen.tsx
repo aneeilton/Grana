@@ -1,21 +1,25 @@
 "use client";
 
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useEffect, useMemo, useState } from "react";
-import { FileWarning, PartyPopper, Trash2 } from "@/components/ui/icons";
+import { FileWarning, Trash2 } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { TopHeader } from "@/components/TopHeader";
-import { Card, EmptyState } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { formatMoney } from "@/lib/format";
+import type { Compromissos } from "@/lib/compromissos";
 import type { Divida, DividaTipo } from "@/lib/types";
 
 export function DividasScreen({
   initialDividas,
   dividaConsorcio = 0,
+  compromissos,
   hideHeader,
   onTotalChange,
 }: {
   initialDividas: Divida[];
   dividaConsorcio?: number;
+  compromissos?: Compromissos;
   hideHeader?: boolean;
   onTotalChange?: (total: number) => void;
 }) {
@@ -37,6 +41,16 @@ export function DividasScreen({
     () => dividas.filter((d) => d.tipo === "longo").reduce((s, d) => s + Number(d.valor), 0),
     [dividas]
   );
+
+  const totalGeral = totalCurto + totalLongo + dividaConsorcio + (compromissos?.total ?? 0);
+
+  // Calculado sozinho a partir do Fluxo; zerados ficam de fora da lista.
+  const automaticas = [
+    { label: "Cartões", hint: "inclui parcelas futuras", valor: compromissos?.cartoes ?? 0 },
+    { label: "Despesas fixas", hint: "próximos 6 meses", valor: compromissos?.fixas ?? 0 },
+    { label: "Despesas pontuais", hint: "próximos 6 meses", valor: compromissos?.pontuais ?? 0 },
+    { label: "Consórcio contemplado", hint: "parcelas em aberto", valor: dividaConsorcio },
+  ].filter((a) => a.valor > 0);
 
   useEffect(() => {
     onTotalChange?.(totalCurto + totalLongo);
@@ -106,40 +120,44 @@ export function DividasScreen({
     <div>
       {hideHeader ? (
         <p className="sr-only">
-          Total · <span className="font-bold text-ink-800">{formatMoney(totalCurto + totalLongo + dividaConsorcio)}</span>
+          Total · <span className="font-bold text-ink-800">{formatMoney(totalGeral)}</span>
         </p>
       ) : (
         <TopHeader
           icon={FileWarning}
           title="Dívidas"
-          subtitle={`Total ${formatMoney(totalCurto + totalLongo + dividaConsorcio)}`}
+          subtitle={`Total ${formatMoney(totalGeral)}`}
         />
       )}
 
       <div className="space-y-4 px-4 pt-1">
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="p-3.5">
-            <p className="text-[13px] font-medium text-ink-500">
-              Curto prazo
-            </p>
-            <p className="mt-0.5 text-[17px] font-bold text-ink-900">{formatMoney(totalCurto)}</p>
-          </Card>
-          <Card className="p-3.5">
-            <p className="text-[13px] font-medium text-ink-500">
-              Longo prazo
-            </p>
-            <p className="mt-0.5 text-[17px] font-bold text-ink-900">{formatMoney(totalLongo + dividaConsorcio)}</p>
-          </Card>
-        </div>
-        {dividaConsorcio > 0 && (
-          <p className="caption px-1">
-            Longo prazo inclui {formatMoney(dividaConsorcio)} de consórcio contemplado (parcelas em aberto),
-            calculado automaticamente na aba Fluxo → Consórcio.
-          </p>
+        {automaticas.length > 0 && (
+          <div>
+            <p className="group-label pb-1.5">Calculado pelo app</p>
+            <Card className="p-0">
+              <ul className="divide-y divide-ink-100">
+                {automaticas.map((a) => (
+                  <li key={a.label} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] text-ink-900">{a.label}</p>
+                      <p className="caption truncate">{a.hint}</p>
+                    </div>
+                    <span className="shrink-0 text-[15px] font-semibold text-ink-900">{formatMoney(a.valor)}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-center justify-between gap-3 border-t border-ink-100 px-4 py-2.5">
+                <span className="text-[15px] font-semibold text-ink-900">Total</span>
+                <span className="text-[15px] font-bold text-coral-500">{formatMoney(totalGeral)}</span>
+              </div>
+            </Card>
+            <p className="caption mt-1.5 px-1">Consórcios não contemplados não entram.</p>
+          </div>
         )}
 
+        <p className="group-label -mb-2">Cadastradas por você</p>
         {dividas.length === 0 ? (
-          <EmptyState icon={PartyPopper} title="Nenhuma dívida cadastrada" hint="Ótimo sinal!" />
+          <p className="caption px-1">Nenhuma. Use para empréstimos ou financiamentos fora do Fluxo.</p>
         ) : (
           <div className="space-y-2">
             {dividas.map((divida) => (
@@ -191,12 +209,10 @@ export function DividasScreen({
               className="field"
             />
             <div className="grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                step="0.01"
+              <MoneyInput
                 placeholder="Valor"
                 value={valor}
-                onChange={(e) => setValor(e.target.value)}
+                onValueChange={setValor}
                 className="field"
               />
               <select

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeftRight, CalendarRange, House, Landmark, LayoutGrid } from "@/components/ui/icons";
@@ -15,14 +16,38 @@ const TABS = [
 /**
  * Barra de abas no padrão do iOS: material translúcido sobre o conteúdo,
  * ícone preenchido + tinta azul na aba atual, contorno cinza nas demais.
+ * Some ao rolar pra baixo (mais tela pro conteúdo) e volta ao rolar pra
+ * cima ou ao chegar no topo.
  */
 export function BottomNav() {
   const pathname = usePathname();
+  const [oculta, setOculta] = useState(false);
+  const ultimoY = useRef(0);
+
+  useEffect(() => {
+    ultimoY.current = window.scrollY;
+    function onScroll() {
+      const y = window.scrollY;
+      const delta = y - ultimoY.current;
+      if (y < 60) setOculta(false);
+      else if (delta > 8) setOculta(true);
+      else if (delta < -8) setOculta(false);
+      // pequenos tremores do dedo não contam
+      if (Math.abs(delta) > 8 || y < 60) ultimoY.current = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // trocou de aba: barra sempre visível
+  useEffect(() => setOculta(false), [pathname]);
 
   return (
     <nav
       aria-label="Seções do app"
-      className="safe-bottom sticky bottom-0 z-20 bg-bar/80 shadow-bar backdrop-blur-xl backdrop-saturate-[1.8]"
+      className={`safe-bottom sticky bottom-0 z-20 bg-bar/80 shadow-bar backdrop-blur-xl backdrop-saturate-[1.8] transition-transform duration-300 ease-out-expo ${
+        oculta ? "translate-y-full" : "translate-y-0"
+      }`}
     >
       <ul className="flex items-stretch justify-between px-1">
         {TABS.map((tab) => {
