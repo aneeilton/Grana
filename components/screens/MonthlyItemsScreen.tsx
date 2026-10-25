@@ -242,7 +242,7 @@ export function MonthlyItemsScreen({
     [itemsVisiveis, lancamentos]
   );
   const itemsPontuais = useMemo(
-    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.consorcio_id && !i.fixo && !ehSazonal(i) && !i.parcelas_total)),
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.consorcio_id && !i.emprestimo_id && !i.fixo && !ehSazonal(i) && !i.parcelas_total)),
     [itemsVisiveis, lancamentos]
   );
 

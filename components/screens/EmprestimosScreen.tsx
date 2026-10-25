@@ -110,12 +110,16 @@ export function EmprestimosScreen({
         fixo: false,
         competencia_unica: inicio,
         cartao: false,
-        parcelas_total: n,
+        // parcela única = despesa pontual no mês (o banco só aceita
+        // parcelas_total de 2 pra cima)
+        parcelas_total: n > 1 ? n : null,
         emprestimo_id: emp.id,
       })
       .select()
       .single();
     if (e2 || !item) {
+      // não deixa um empréstimo "vazio" (sem parcelas) pra trás
+      await supabase.from("emprestimos").delete().eq("id", emp.id);
       setSaving(false);
       return setError(e2?.message ?? "Falha ao criar as parcelas");
     }
