@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
-import { CreditCard } from "@/components/ui/icons";
+import { useMemo, useState } from "react";
+import { CreditCard, Pencil } from "@/components/ui/icons";
+import { createClient } from "@/lib/supabase/client";
 import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { currentCompetencia, formatMoney } from "@/lib/format";
 import { comprasPorCartao, saldoDevedorCartao } from "@/lib/cartoes";
@@ -40,14 +42,115 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
   const pctGeral = limiteGeral > 0 ? Math.min(1, usadoGeral / limiteGeral) : 0;
   const disponivelGeral = limiteGeral - usadoGeral;
 
+  // Cadastro/edição do cartão direto aqui: nome, limite e vencimento,
+  // mesmo sem nenhuma fatura lançada ainda. O cartão é uma despesa fixa
+  // (cartao = true), então aparece em Despesas pra lançar a fatura.
+  const supabase = createClient();
+  const [form, setForm] = useState<{ id: string | null } | null>(null);
+  const [nome, setNome] = useState("");
+  const [limite, setLimite] = useState("");
+  const [dia, setDia] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function abrir(cartao?: Item) {
+    setForm({ id: cartao?.id ?? null });
+    setNome(cartao?.nome ?? "");
+    setLimite(cartao?.limite != null ? String(cartao.limite) : "");
+    setDia(cartao?.dia_vencimento != null ? String(cartao.dia_vencimento) : "");
+    setError(null);
+  }
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    const d = dia ? Math.floor(Number(dia)) : null;
+    if (!nome.trim()) return setError("Informe o nome do cartão");
+    if (d !== null && !(d >= 1 && d <= 31)) return setError("Dia de vencimento entre 1 e 31");
+    setSaving(true);
+    setError(null);
+    const campos = { nome: nome.trim(), limite: limite ? Number(limite) : null, dia_vencimento: d };
+    let erro: string | null = null;
+    if (form?.id) {
+      const { error } = await supabase.from("items").update(campos).eq("id", form.id);
+      erro = error?.message ?? null;
+    } else {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) erro = "Sessão não encontrada";
+      else {
+        const { error } = await supabase.from("items").insert({
+          ...campos,
+          user_id: user.id,
+          tipo: "despesa",
+          expectativa: false,
+          fixo: true,
+          cartao: true,
+          competencia_unica: null,
+        });
+        erro = error?.message ?? null;
+      }
+    }
+    setSaving(false);
+    if (erro) return setError(erro);
+    // Despesas e Início leem os itens da carga da página: recarrega pra
+    // o cartão novo/alterado aparecer em todas as abas.
+    window.location.reload();
+  }
+
+  const formulario = form ? (
+    <form onSubmit={salvar} className="space-y-2 rounded-3xl bg-surface p-4 shadow-card">
+      <p className="text-[13px] font-semibold text-ink-400">{form.id ? "Editar cartão" : "Novo cartão"}</p>
+      <input
+        autoFocus
+        placeholder="Nome do cartão (ex: Nubank)"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+        className="field"
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block space-y-1">
+          <span className="field-label">Limite</span>
+          <MoneyInput placeholder="0,00" value={limite} onValueChange={setLimite} className="field" />
+        </label>
+        <label className="block space-y-1">
+          <span className="field-label">Dia de vencimento</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={31}
+            placeholder="ex: 10"
+            value={dia}
+            onChange={(e) => setDia(e.target.value)}
+            className="field"
+          />
+        </label>
+      </div>
+      {error && <p className="text-xs font-medium text-coral-500">Erro: {error}</p>}
+      <div className="flex gap-2 pt-1">
+        <button type="button" onClick={() => setForm(null)} className="btn-secondary flex-1">
+          Cancelar
+        </button>
+        <button type="submit" disabled={saving} className="btn-primary flex-1">
+          Salvar
+        </button>
+      </div>
+      {!form.id && (
+        <p className="caption px-0.5">A fatura de cada mês você lança depois em Despesas, no card do cartão.</p>
+      )}
+    </form>
+  ) : (
+    <button onClick={() => abrir()} className="btn-add">
+      + Adicionar cartão
+    </button>
+  );
+
   if (cartoes.length === 0) {
     return (
-      <div className="px-4">
-        <EmptyState
-          icon={CreditCard}
-          title="Nenhum cartão cadastrado"
-          hint='Adicione um cartão na aba "Despesas" marcando "É um cartão de crédito"'
-        />
+      <div className="space-y-5 px-4">
+        <EmptyState icon={CreditCard} title="Nenhum cartão cadastrado" hint="Adicione seu primeiro cartão abaixo" />
+        {formulario}
       </div>
     );
   }
@@ -90,9 +193,11 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
                         {c.limite
                           ? `Usado ${formatMoney(c.usado)} de ${formatMoney(c.limite)}`
                           : `Usado ${formatMoney(c.usado)} · limite não informado`}
+                        {c.dia_vencimento ? ` · vence dia ${c.dia_vencimento}` : ""}
                       </p>
                     </div>
                   </div>
+                  <div className="flex shrink-0 items-center gap-3">
                   {c.limite ? (
                     <p className="shrink-0 text-right">
                       <span
@@ -105,6 +210,14 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
                   ) : (
                     <span className="shrink-0 text-[15px] font-semibold text-ink-400">—</span>
                   )}
+                    <button
+                      onClick={() => abrir(c)}
+                      className="icon-btn hover:text-accent"
+                      aria-label={`Editar limite e vencimento de ${c.nome}`}
+                    >
+                      <Pencil size={16} strokeWidth={2} aria-hidden />
+                    </button>
+                  </div>
                 </div>
                 {c.limite ? (
                   <div
@@ -126,6 +239,8 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
           </ul>
         </Card>
       </section>
+
+      {formulario}
     </div>
   );
 }
