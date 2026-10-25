@@ -34,7 +34,7 @@ export function calcularCompromissos(
   let cartoes = 0;
   for (const c of items) {
     if (!c.cartao) continue;
-    cartoes += saldoDevedorCartao(c, compras.get(c.id), lancamentos, hoje, efetivosHoje.get(c.id));
+    cartoes += saldoDevedorCartao(c, compras.get(c.id), lancamentos, hoje);
   }
 
   let fixas = 0;

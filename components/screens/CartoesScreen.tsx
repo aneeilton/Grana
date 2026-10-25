@@ -5,8 +5,7 @@ import { CreditCard } from "@/components/ui/icons";
 import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { currentCompetencia, formatMoney } from "@/lib/format";
-import { valoresEfetivosPorItem } from "@/lib/projection";
-import { comprasPorCartao, usoDoLimite } from "@/lib/cartoes";
+import { comprasPorCartao, saldoDevedorCartao } from "@/lib/cartoes";
 import type { Item, Lancamento } from "@/lib/types";
 
 function usoCor(pct: number) {
@@ -20,24 +19,20 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
   // extrato navegavel por competencia.
   const competencia = useMemo(() => currentCompetencia(), []);
   const compras = useMemo(() => comprasPorCartao(items), [items]);
-  const efetivos = useMemo(
-    () => valoresEfetivosPorItem(items, lancamentos, competencia),
-    [items, lancamentos, competencia]
-  );
 
   const linhas = useMemo(
     () =>
       cartoes
         .map((c) => {
-          // Visão geral: fatura do mês atual (mesmo paga) + faturas futuras
-          // e parcelas -- essa aba não tem seletor de mês.
-          const usado = usoDoLimite(c, compras.get(c.id), lancamentos, competencia, efetivos.get(c.id));
+          // Em uso = tudo que falta pagar (fatura atual, futuras e parcelas);
+          // pago libera o limite. Essa aba não tem seletor de mês.
+          const usado = saldoDevedorCartao(c, compras.get(c.id), lancamentos, competencia);
           const limite = c.limite ?? 0;
           const pct = limite > 0 ? Math.min(1, usado / limite) : 0;
           return { ...c, usado, pct, disponivel: limite - usado };
         })
         .sort((a, b) => b.pct - a.pct),
-    [cartoes, efetivos, compras, lancamentos, competencia]
+    [cartoes, compras, lancamentos, competencia]
   );
 
   const limiteGeral = useMemo(() => linhas.reduce((s, c) => s + (c.limite ?? 0), 0), [linhas]);
@@ -64,7 +59,7 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
         title="Limite disponível"
         value={formatMoney(disponivelGeral)}
         progress={pctGeral}
-        progressLabel={`${Math.round(pctGeral * 100)}% do limite em uso · inclui faturas futuras`}
+        progressLabel={`${Math.round(pctGeral * 100)}% do limite em uso · pago já liberado`}
       >
         <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-white/15 pt-2">
           <div className="min-w-0">

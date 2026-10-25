@@ -1,5 +1,5 @@
-import { monthsBetween } from "@/lib/format";
-import type { ValorEfetivo } from "@/lib/projection";
+import { monthsBetween, shiftCompetencia } from "@/lib/format";
+import { valoresEfetivosPorItem, type ValorEfetivo } from "@/lib/projection";
 import type { Item, Lancamento } from "@/lib/types";
 
 /** Compras (parceladas ou à vista) ligadas a cada cartão, por id do cartão. */
@@ -48,50 +48,37 @@ export function rotuloParcela(item: Item, lancamentos: Lancamento[], competencia
 }
 
 /**
- * Saldo devedor total de um cartão, sem olhar mês selecionado: todos os
- * lançamentos em aberto (não pagos) do cartão e das compras/parcelas
- * ligadas a ele, de qualquer mês -- passados não quitados, o atual e os
- * futuros já lançados. Se o mês atual ainda não tem fatura lançada mas o
- * cartão repete o valor do último mês, esse valor previsto também entra
- * (só o do mês atual, pra não somar uma fatura "infinita" pra frente).
+ * Quanto o cartão está usando do limite (e devendo): tudo que ainda não
+ * foi pago, do cartão e das compras/parcelas ligadas a ele. Pago sai da
+ * conta e libera o limite.
+ *
+ * Conta igual à aba Despesas: num mês sem lançamento próprio, a fatura
+ * repete o valor do último mês lançado (ex: dez = 696, abr = 0 -> jan,
+ * fev e mar também são 696). Essa repetição vale só até o último mês
+ * lançado do cartão, pra não somar uma fatura "infinita" pra frente.
+ * Meses passados entram só se tiverem lançamento em aberto.
  */
 export function saldoDevedorCartao(
   cartao: Item,
   compras: Item[] | undefined,
   lancamentos: Lancamento[],
-  competenciaHoje: string,
-  efetivoHoje: ValorEfetivo | undefined
+  competenciaHoje: string
 ): number {
-  const ids = new Set([cartao.id, ...(compras ?? []).map((c) => c.id)]);
-  const emAberto = lancamentos
-    .filter((l) => ids.has(l.item_id) && !l.pago)
-    .reduce((s, l) => s + Number(l.valor), 0);
-  const previstoHoje = efetivoHoje?.inferido && !efetivoHoje.pago ? efetivoHoje.valor : 0;
-  return emAberto + previstoHoje;
-}
+  const itens = [cartao, ...(compras ?? [])];
+  const ids = new Set(itens.map((i) => i.id));
+  const doCartao = lancamentos.filter((l) => ids.has(l.item_id));
 
-/**
- * Quanto do limite o cartão está usando (visão geral, aba Cartões e
- * barra de uso no Fluxo): a fatura do mês atual -- mesmo já paga -- e
- * todas as faturas futuras lançadas, do cartão e das compras/parcelas
- * ligadas a ele, mais qualquer mês passado ainda em aberto. Se o mês
- * atual não tem fatura lançada mas o cartão repete o último valor, esse
- * valor previsto entra também.
- *
- * Diferente de saldoDevedorCartao (o que ainda falta pagar, usado como
- * dívida no patrimônio), aqui a fatura paga do mês continua contando.
- */
-export function usoDoLimite(
-  cartao: Item,
-  compras: Item[] | undefined,
-  lancamentos: Lancamento[],
-  competenciaHoje: string,
-  efetivoHoje: ValorEfetivo | undefined
-): number {
-  const ids = new Set([cartao.id, ...(compras ?? []).map((c) => c.id)]);
-  const lancado = lancamentos
-    .filter((l) => ids.has(l.item_id) && (l.competencia >= competenciaHoje || !l.pago))
+  const passadosEmAberto = doCartao
+    .filter((l) => l.competencia < competenciaHoje && !l.pago)
     .reduce((s, l) => s + Number(l.valor), 0);
-  const previstoHoje = efetivoHoje?.inferido ? efetivoHoje.valor : 0;
-  return lancado + previstoHoje;
+
+  const ultimo = doCartao.reduce((max, l) => (l.competencia > max ? l.competencia : max), "");
+  let futuros = 0;
+  for (let m = competenciaHoje; m <= ultimo; m = shiftCompetencia(m, 1)) {
+    const efetivos = valoresEfetivosPorItem(itens, doCartao, m);
+    for (const ef of efetivos.values()) {
+      if (!ef.pago) futuros += ef.valor;
+    }
+  }
+  return passadosEmAberto + futuros;
 }
