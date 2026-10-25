@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Card } from "@/components/ui/Card";
-import { valoresEfetivosPorItem, type MonthProjection } from "@/lib/projection";
+import { ehRegistroDeLance, valoresEfetivosPorItem, type MonthProjection } from "@/lib/projection";
 import { rotuloParcela } from "@/lib/cartoes";
 import { formatCompact, monthLabel } from "@/lib/format";
 import type { Item, Lancamento } from "@/lib/types";
@@ -42,7 +42,7 @@ export function SemestreGrid({
     const porMes = series.map((m) => valoresEfetivosPorItem(items, lancamentos, m.competencia));
     const linhas = (tipo: Item["tipo"]): Linha[] =>
       items
-        .filter((i) => i.tipo === tipo)
+        .filter((i) => i.tipo === tipo && !ehRegistroDeLance(i))
         .map((item) => ({
           id: item.id,
           nome: item.nome,

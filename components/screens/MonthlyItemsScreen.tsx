@@ -10,7 +10,7 @@ import { Card, EmptyState } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel, shiftCompetencia } from "@/lib/format";
-import { ehSazonal, ocorreNoMes, valoresEfetivosPorItem } from "@/lib/projection";
+import { ehSazonal, ocorreNoMes, valoresEfetivosPorItem, ehRegistroDeLance } from "@/lib/projection";
 import { comprasPorCartao, inicioDoPlano, rotuloParcela, totalComprasNoMes, saldoDevedorCartao } from "@/lib/cartoes";
 import type { Conta, Item, ItemTipo, Lancamento } from "@/lib/types";
 
@@ -251,6 +251,7 @@ export function MonthlyItemsScreen({
   // e quanto já foi pago/recebido.
   const resumoMes = useMemo(() => {
     const linhas = itemsVisiveis
+      .filter((i) => !ehRegistroDeLance(i))
       .map((i) => ({
         id: i.id,
         nome: i.nome,
@@ -665,6 +666,7 @@ export function MonthlyItemsScreen({
     const usoCor =
       uso === null ? "" : uso >= 0.9 ? "bg-coral-500" : uso >= 0.7 ? "bg-sun-400" : "bg-brand-500";
     const meta = [
+      ehRegistroDeLance(item) ? "Registro do lance · fora dos totais" : null,
       showDia && item.dia_vencimento ? `Vence dia ${item.dia_vencimento}` : null,
       showExpectativa && item.expectativa ? "Expectativa" : null,
       ehSazonal(item)

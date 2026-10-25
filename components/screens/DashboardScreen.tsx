@@ -23,7 +23,7 @@ import { SummaryCard } from "@/components/ui/SummaryCard";
 import { DespesaDiariaCard } from "@/components/screens/DespesaDiariaCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { MonthBars, type MonthBar } from "@/components/ui/MonthBars";
-import { buildMonthlyProjection, mesCritico, valoresEfetivosPorItem } from "@/lib/projection";
+import { buildMonthlyProjection, ehRegistroDeLance, mesCritico, valoresEfetivosPorItem } from "@/lib/projection";
 import { comprasPorCartao, rotuloParcela, totalComprasNoMes } from "@/lib/cartoes";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel } from "@/lib/format";
 import type { Compromissos } from "@/lib/compromissos";
@@ -151,7 +151,7 @@ export function DashboardScreen({
   const despesasDoMes = useMemo(
     () =>
       items
-        .filter((i) => i.tipo === "despesa" && !i.cartao_id)
+        .filter((i) => i.tipo === "despesa" && !i.cartao_id && !ehRegistroDeLance(i))
         .map((i) => {
           const efetivo = efetivosDoMes.get(i.id);
           const parcelas = i.cartao ? totalComprasNoMes(compras.get(i.id), efetivosDoMes) : 0;

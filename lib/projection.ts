@@ -17,6 +17,15 @@ export type MonthProjection = {
 
 export type ValorEfetivo = { valor: number; pago: boolean; inferido: boolean };
 
+/**
+ * Lance de consórcio (despesa pontual ligada à cota, sem parcelas): fica
+ * só como registro -- o dinheiro já saiu do saldo das contas, então não
+ * entra em totais de despesa nem na projeção.
+ */
+export function ehRegistroDeLance(item: Item): boolean {
+  return !!item.consorcio_id && !item.parcelas_total;
+}
+
 /** Item anual/sazonal: repete só nos meses do ano em meses_recorrencia. */
 export function ehSazonal(item: Item): boolean {
   return !item.fixo && !!item.meses_recorrencia?.length;
@@ -133,6 +142,7 @@ export function buildMonthlyProjection({
     let despesaPendente = 0;
 
     for (const item of items) {
+      if (ehRegistroDeLance(item)) continue;
       const efetivo = lancamentoEfetivo(item, competencia, porItem.get(item.id));
       if (!efetivo) continue;
       if (item.tipo === "receita") {
