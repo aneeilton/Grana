@@ -69,3 +69,29 @@ export function saldoDevedorCartao(
   const previstoHoje = efetivoHoje?.inferido && !efetivoHoje.pago ? efetivoHoje.valor : 0;
   return emAberto + previstoHoje;
 }
+
+/**
+ * Quanto do limite o cartão está usando (visão geral, aba Cartões e
+ * barra de uso no Fluxo): a fatura do mês atual -- mesmo já paga -- e
+ * todas as faturas futuras lançadas, do cartão e das compras/parcelas
+ * ligadas a ele, mais qualquer mês passado ainda em aberto. Se o mês
+ * atual não tem fatura lançada mas o cartão repete o último valor, esse
+ * valor previsto entra também.
+ *
+ * Diferente de saldoDevedorCartao (o que ainda falta pagar, usado como
+ * dívida no patrimônio), aqui a fatura paga do mês continua contando.
+ */
+export function usoDoLimite(
+  cartao: Item,
+  compras: Item[] | undefined,
+  lancamentos: Lancamento[],
+  competenciaHoje: string,
+  efetivoHoje: ValorEfetivo | undefined
+): number {
+  const ids = new Set([cartao.id, ...(compras ?? []).map((c) => c.id)]);
+  const lancado = lancamentos
+    .filter((l) => ids.has(l.item_id) && (l.competencia >= competenciaHoje || !l.pago))
+    .reduce((s, l) => s + Number(l.valor), 0);
+  const previstoHoje = efetivoHoje?.inferido ? efetivoHoje.valor : 0;
+  return lancado + previstoHoje;
+}

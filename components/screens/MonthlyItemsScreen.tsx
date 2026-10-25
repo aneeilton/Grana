@@ -11,7 +11,7 @@ import { SummaryCard } from "@/components/ui/SummaryCard";
 import { MonthSelector } from "@/components/ui/MonthSelector";
 import { MES_INICIAL, currentCompetencia, formatMoney, monthLabel, monthYearLabel, shiftCompetencia } from "@/lib/format";
 import { ehSazonal, ocorreNoMes, valoresEfetivosPorItem } from "@/lib/projection";
-import { comprasPorCartao, inicioDoPlano, rotuloParcela, saldoDevedorCartao, totalComprasNoMes } from "@/lib/cartoes";
+import { comprasPorCartao, inicioDoPlano, rotuloParcela, totalComprasNoMes, usoDoLimite } from "@/lib/cartoes";
 import type { Conta, Item, ItemTipo, Lancamento } from "@/lib/types";
 
 type Tone = "brand" | "sky" | "sun" | "coral" | "grape";
@@ -607,15 +607,15 @@ export function MonthlyItemsScreen({
     const state = saveState[item.id] ?? "idle";
     const ItemIcon = itemIcon(tipo, item.fixo, item.cartao);
     const inferido = !lanc && efetivos.get(item.id)?.inferido;
-    // Limite usado = saldo devedor total do cartão (tudo em aberto, de
-    // qualquer mês, inclusive parcelas e faturas futuras) -- igual à aba Cartões.
+    // Limite usado = fatura do mês atual (mesmo paga) + faturas futuras e
+    // parcelas -- igual à aba Cartões.
     const comprasDoCartao = item.cartao ? (compras.get(item.id) ?? []) : [];
     const comprasNoMes = comprasDoCartao
       .map((c) => ({ compra: c, valor: efetivos.get(c.id)?.valor ?? 0 }))
       .filter((c) => c.valor > 0);
     const totalComprasMes = totalComprasNoMes(comprasDoCartao, efetivos);
     const valorFaturaAtual = item.cartao
-      ? saldoDevedorCartao(item, comprasDoCartao, todosLancamentos, competenciaHoje, efetivosHoje.get(item.id))
+      ? usoDoLimite(item, comprasDoCartao, todosLancamentos, competenciaHoje, efetivosHoje.get(item.id))
       : 0;
     const uso = item.cartao && item.limite ? Math.min(1, valorFaturaAtual / item.limite) : null;
     const usoCor =

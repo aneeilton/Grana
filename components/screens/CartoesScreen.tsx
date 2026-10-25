@@ -6,7 +6,7 @@ import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { currentCompetencia, formatMoney } from "@/lib/format";
 import { valoresEfetivosPorItem } from "@/lib/projection";
-import { comprasPorCartao, saldoDevedorCartao } from "@/lib/cartoes";
+import { comprasPorCartao, usoDoLimite } from "@/lib/cartoes";
 import type { Item, Lancamento } from "@/lib/types";
 
 function usoCor(pct: number) {
@@ -29,12 +29,12 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
     () =>
       cartoes
         .map((c) => {
-          // Saldo devedor total (todos os meses em aberto, inclusive parcelas
-          // e faturas futuras) -- essa aba não tem seletor de mês.
-          const usado = saldoDevedorCartao(c, compras.get(c.id), lancamentos, competencia, efetivos.get(c.id));
+          // Visão geral: fatura do mês atual (mesmo paga) + faturas futuras
+          // e parcelas -- essa aba não tem seletor de mês.
+          const usado = usoDoLimite(c, compras.get(c.id), lancamentos, competencia, efetivos.get(c.id));
           const limite = c.limite ?? 0;
           const pct = limite > 0 ? Math.min(1, usado / limite) : 0;
-          return { ...c, usado, pct };
+          return { ...c, usado, pct, disponivel: limite - usado };
         })
         .sort((a, b) => b.pct - a.pct),
     [cartoes, efetivos, compras, lancamentos, competencia]
@@ -43,6 +43,7 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
   const limiteGeral = useMemo(() => linhas.reduce((s, c) => s + (c.limite ?? 0), 0), [linhas]);
   const usadoGeral = useMemo(() => linhas.reduce((s, c) => s + c.usado, 0), [linhas]);
   const pctGeral = limiteGeral > 0 ? Math.min(1, usadoGeral / limiteGeral) : 0;
+  const disponivelGeral = limiteGeral - usadoGeral;
 
   if (cartoes.length === 0) {
     return (
@@ -58,24 +59,27 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
 
   return (
     <div className="space-y-6 px-4">
-      {/* Saldo devedor = tudo em aberto do cartão (fatura atual, parcelas e
-          faturas futuras já lançadas) -- o mesmo "usado" do limite. */}
       <SummaryCard
         tone="grape"
-        title="Limite geral"
-        value={formatMoney(limiteGeral)}
+        title="Limite disponível"
+        value={formatMoney(disponivelGeral)}
         progress={pctGeral}
-        progressLabel={`${formatMoney(usadoGeral)} usados · ${Math.round(pctGeral * 100)}%`}
-        rowsTitle="Saldo devedor por cartão (inclui parcelas futuras)"
-        rows={[...linhas]
-          .sort((a, b) => b.usado - a.usado)
-          .map((c) => ({ id: c.id, label: c.nome, value: formatMoney(c.usado), muted: c.usado === 0 }))}
-        totalLabel="Total devedor"
-        totalValue={formatMoney(usadoGeral)}
-      />
+        progressLabel={`${Math.round(pctGeral * 100)}% do limite em uso · inclui faturas futuras`}
+      >
+        <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-white/15 pt-2">
+          <div className="min-w-0">
+            <dt className="text-[13px] font-medium text-white/75">Limite total</dt>
+            <dd className="truncate text-[15px] font-semibold">{formatMoney(limiteGeral)}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-[13px] font-medium text-white/75">Total usado</dt>
+            <dd className="truncate text-[15px] font-semibold">{formatMoney(usadoGeral)}</dd>
+          </div>
+        </dl>
+      </SummaryCard>
 
       <section>
-        <SectionHeader title="Uso do limite" />
+        <SectionHeader title="Por cartão" />
         <Card className="p-0">
           <ul className="divide-y divide-ink-100">
             {linhas.map((c) => (
@@ -88,13 +92,24 @@ export function CartoesScreen({ items, lancamentos }: { items: Item[]; lancament
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-medium text-ink-900">{c.nome}</p>
                       <p className="caption">
-                        {formatMoney(c.usado)} de {c.limite ? formatMoney(c.limite) : "limite não informado"}
+                        {c.limite
+                          ? `Usado ${formatMoney(c.usado)} de ${formatMoney(c.limite)}`
+                          : `Usado ${formatMoney(c.usado)} · limite não informado`}
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0 text-[15px] font-semibold text-ink-900">
-                    {c.limite ? `${Math.round(c.pct * 100)}%` : "—"}
-                  </span>
+                  {c.limite ? (
+                    <p className="shrink-0 text-right">
+                      <span
+                        className={`block text-[15px] font-semibold ${c.disponivel < 0 ? "text-coral-500" : "text-ink-900"}`}
+                      >
+                        {formatMoney(c.disponivel)}
+                      </span>
+                      <span className="caption">disponível</span>
+                    </p>
+                  ) : (
+                    <span className="shrink-0 text-[15px] font-semibold text-ink-400">—</span>
+                  )}
                 </div>
                 {c.limite ? (
                   <div
