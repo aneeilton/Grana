@@ -42,6 +42,29 @@ const MESES_ANO = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set"
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
+const CATEGORIAS = [
+  { id: "cartoes", label: "Cartões", cor: "bg-grape-400" },
+  { id: "fixas", label: "Despesas fixas", cor: "bg-sun-400" },
+  { id: "consorcio", label: "Consórcio", cor: "bg-sky-400" },
+  { id: "emprestimo", label: "Empréstimos", cor: "bg-coral-400" },
+  { id: "parceladas", label: "Parceladas", cor: "bg-accent" },
+  { id: "pontuais", label: "Pontuais", cor: "bg-ink-400" },
+  { id: "sazonais", label: "Anuais e sazonais", cor: "bg-brand-500" },
+] as const;
+
+type CategoriaId = (typeof CATEGORIAS)[number]["id"];
+
+/** Mesma separação dos grupos da lista de Despesas. */
+function categoriaDespesa(i: Item): CategoriaId {
+  if (i.cartao) return "cartoes";
+  if (i.fixo) return "fixas";
+  if (i.consorcio_id) return "consorcio";
+  if (i.emprestimo_id) return "emprestimo";
+  if (ehSazonal(i)) return "sazonais";
+  if (i.parcelas_total) return "parceladas";
+  return "pontuais";
+}
+
 export function MonthlyItemsScreen({
   tipo,
   title,
@@ -240,6 +263,23 @@ export function MonthlyItemsScreen({
     const total = linhas.reduce((s, l) => s + l.valor, 0);
     return { linhas, feito, total };
   }, [itemsVisiveis, efetivos, compras, lancamentos]);
+
+  // Subtotais do mês por categoria (só em Despesas): mesmos grupos da
+  // lista abaixo, cada um com total e quanto já foi pago.
+  const subtotais = useMemo(() => {
+    if (tipo !== "despesa") return [];
+    const porId = new Map(itemsVisiveis.map((i) => [i.id, i]));
+    const grupos = CATEGORIAS.map((c) => ({ ...c, total: 0, pago: 0, itens: 0 }));
+    for (const l of resumoMes.linhas) {
+      const item = porId.get(l.id);
+      if (!item) continue;
+      const g = grupos.find((c) => c.id === categoriaDespesa(item))!;
+      g.total += l.valor;
+      g.itens += 1;
+      if (l.feito) g.pago += l.valor;
+    }
+    return grupos.filter((g) => g.total > 0);
+  }, [tipo, itemsVisiveis, resumoMes]);
 
   function isDirty(item: Item) {
     // Compara contra o valor VIGENTE (real ou herdado do ultimo mes), nao
@@ -800,6 +840,41 @@ export function MonthlyItemsScreen({
           />
         )}
 
+        {subtotais.length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {subtotais.map((g) => {
+              const tudoPago = g.pago >= g.total;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById(`grupo-${tipo}-${g.id}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                  className="min-w-0 rounded-2xl bg-surface p-3 text-left shadow-card transition active:scale-[0.98]"
+                >
+                  <span className="flex items-center gap-1.5 text-[13px] text-ink-500">
+                    <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${g.cor}`} />
+                    <span className="truncate">{g.label}</span>
+                  </span>
+                  <span className="mt-1 block truncate text-[17px] font-bold leading-tight text-ink-900">
+                    {formatMoney(g.total)}
+                  </span>
+                  <span className={`mt-0.5 block truncate text-[12px] ${tudoPago ? "text-brand-700" : "text-ink-400"}`}>
+                    {tudoPago
+                      ? "tudo pago"
+                      : g.pago > 0
+                        ? `falta ${formatMoney(g.total - g.pago)}`
+                        : `${g.itens} ${g.itens === 1 ? "item" : "itens"} · ${Math.round((g.total / resumoMes.total) * 100)}% do mês`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {!contaPadraoId && (
           <p className="caption px-1">
             Defina uma conta padrão em <Link href="/patrimonio" className="font-medium text-accent">Patrimônio</Link> para
@@ -819,43 +894,43 @@ export function MonthlyItemsScreen({
           <div className="space-y-5">
             {itemsCartoes.length > 0 && (
               <div className="space-y-2">
-                <h3 className="group-label">Cartões</h3>
+                <h3 id={`grupo-${tipo}-cartoes`} className="group-label scroll-mt-4">Cartões</h3>
                 {itemsCartoes.map(renderItem)}
               </div>
             )}
             {itemsFixos.length > 0 && (
               <div className="space-y-2">
-                <h3 className="group-label">Fixas</h3>
+                <h3 id={`grupo-${tipo}-fixas`} className="group-label scroll-mt-4">Fixas</h3>
                 {itemsFixos.map(renderItem)}
               </div>
             )}
             {itemsParcelados.length > 0 && (
               <div className="space-y-2">
-                <h3 className="group-label">Parceladas</h3>
+                <h3 id={`grupo-${tipo}-parceladas`} className="group-label scroll-mt-4">Parceladas</h3>
                 {itemsParcelados.map(renderItem)}
               </div>
             )}
             {itemsConsorcio.length > 0 && (
               <div className="space-y-2">
-                <h3 className="group-label">Consórcios</h3>
+                <h3 id={`grupo-${tipo}-consorcio`} className="group-label scroll-mt-4">Consórcios</h3>
                 {itemsConsorcio.map(renderItem)}
               </div>
             )}
             {itemsEmprestimo.length > 0 && (
               <div className="space-y-2">
-                <h3 className="group-label">Empréstimos</h3>
+                <h3 id={`grupo-${tipo}-emprestimo`} className="group-label scroll-mt-4">Empréstimos</h3>
                 {itemsEmprestimo.map(renderItem)}
               </div>
             )}
             {itemsSazonais.length > 0 && (
               <div className="space-y-2">
-                <h3 className="group-label">Anuais e sazonais</h3>
+                <h3 id={`grupo-${tipo}-sazonais`} className="group-label scroll-mt-4">Anuais e sazonais</h3>
                 {itemsSazonais.map(renderItem)}
               </div>
             )}
             {itemsPontuais.length > 0 && (
               <div className="space-y-2">
-                <h3 className="group-label">Pontuais</h3>
+                <h3 id={`grupo-${tipo}-pontuais`} className="group-label scroll-mt-4">Pontuais</h3>
                 {itemsPontuais.map(renderItem)}
               </div>
             )}
