@@ -44,6 +44,7 @@ export type Item = {
   cartao_id: string | null; // compra feita nesse cartão (soma na fatura dele)
   meses_recorrencia: number[] | null; // anual/sazonal: meses do ano (1-12) em que o item ocorre
   consorcio_id: string | null; // parcela (ou lance) de um consórcio
+  emprestimo_id?: string | null; // parcela de um empréstimo
   created_at: string;
 };
 
@@ -86,5 +87,15 @@ export type Consorcio = {
   lance_competencia: string | null; // YYYY-MM-01
   lance_parcela: number | null; // parcela depois do lance
   lance_status: LanceStatus | null;
+  created_at: string;
+};
+
+export type Emprestimo = {
+  id: string;
+  user_id: string;
+  nome: string;
+  valor: number; // valor recebido
+  taxa_juros: number | null; // % ao mês, opcional
+  consorcio_id: string | null; // cota em que o dinheiro foi usado (lance)
   created_at: string;
 };

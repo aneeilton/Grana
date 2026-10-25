@@ -3,6 +3,7 @@ import { FluxoScreen } from "@/components/screens/FluxoScreen";
 import { PageError } from "@/components/ui/PageError";
 import { loadContaPadrao } from "@/lib/contaPadrao";
 import { loadConsorcios } from "@/lib/consorcioData";
+import { loadEmprestimos } from "@/lib/emprestimoData";
 import type { Item, Lancamento } from "@/lib/types";
 
 async function loadTipo(tipo: "receita" | "despesa") {
@@ -34,7 +35,11 @@ export default async function FluxoPage() {
   if (receita.error) return <PageError error={receita.error} />;
   if (despesa.error) return <PageError error={despesa.error} />;
 
-  const [{ contas, contaPadraoId }, { consorcios }] = await Promise.all([loadContaPadrao(), loadConsorcios()]);
+  const [{ contas, contaPadraoId }, { consorcios }, emprestimos] = await Promise.all([
+    loadContaPadrao(),
+    loadConsorcios(),
+    loadEmprestimos(),
+  ]);
 
   return (
     <FluxoScreen
@@ -43,6 +48,7 @@ export default async function FluxoPage() {
       contas={contas}
       contaPadraoId={contaPadraoId}
       consorcios={consorcios}
+      emprestimos={emprestimos}
     />
   );
 }

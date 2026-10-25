@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CarFront, CreditCard, TrendingUp, Wallet } from "@/components/ui/icons";
+import { CarFront, CreditCard, HandCoins, TrendingUp, Wallet } from "@/components/ui/icons";
 import { TopHeader } from "@/components/TopHeader";
 import { MonthlyItemsScreen } from "@/components/screens/MonthlyItemsScreen";
 import { CartoesScreen } from "@/components/screens/CartoesScreen";
 import { ConsorciosScreen } from "@/components/screens/ConsorciosScreen";
+import { EmprestimosScreen } from "@/components/screens/EmprestimosScreen";
 import { Segmented } from "@/components/ui/Segmented";
-import type { Consorcio, Conta, Item, Lancamento } from "@/lib/types";
+import type { Consorcio, Conta, Emprestimo, Item, Lancamento } from "@/lib/types";
 
 type TipoDados = { items: Item[]; lancamentos: Lancamento[] };
 
@@ -17,14 +18,16 @@ export function FluxoScreen({
   contas: initialContas,
   contaPadraoId,
   consorcios,
+  emprestimos,
 }: {
   receita: TipoDados;
   despesa: TipoDados;
   contas: Conta[];
   contaPadraoId: string | null;
   consorcios: Consorcio[];
+  emprestimos: Emprestimo[];
 }) {
-  const [aba, setAba] = useState<"receita" | "despesa" | "cartoes" | "consorcio">("receita");
+  const [aba, setAba] = useState<"receita" | "despesa" | "cartoes" | "consorcio" | "emprestimo">("receita");
   // Levantado aqui (em vez de cada MonthlyItemsScreen ter sua propria copia)
   // porque as duas telas ajustam o saldo da MESMA conta padrao ao marcar
   // pago/recebido -- com copias independentes, alternar de aba fazia uma
@@ -39,7 +42,7 @@ export function FluxoScreen({
   return (
     <div>
       <TopHeader
-        icon={aba === "receita" ? TrendingUp : aba === "despesa" ? Wallet : aba === "cartoes" ? CreditCard : CarFront}
+        icon={aba === "receita" ? TrendingUp : aba === "despesa" ? Wallet : aba === "cartoes" ? CreditCard : aba === "consorcio" ? CarFront : HandCoins}
         title="Fluxo"
         subtitle={
           aba === "receita"
@@ -48,7 +51,9 @@ export function FluxoScreen({
               ? "Suas contas e cartões"
               : aba === "cartoes"
                 ? "Resumo dos seus cartões"
-                : "Suas cotas e lances"
+                : aba === "consorcio"
+                  ? "Suas cotas e lances"
+                  : "Seus empréstimos"
         }
       />
 
@@ -62,6 +67,7 @@ export function FluxoScreen({
             { value: "despesa", label: "Despesas", dot: "bg-coral-500" },
             { value: "cartoes", label: "Cartões", dot: "bg-grape-600" },
             { value: "consorcio", label: "Consórcio", dot: "bg-sky-500" },
+            { value: "emprestimo", label: "Empréstimo", dot: "bg-coral-500" },
           ]}
         />
       </div>
@@ -113,6 +119,14 @@ export function FluxoScreen({
           items={despesaItems}
           lancamentos={despesaLancamentos}
           saldoContas={contas.reduce((s, c) => s + Number(c.saldo_corrente) + Number(c.saldo_aplicado), 0)}
+        />
+      </div>
+      <div className={aba === "emprestimo" ? "" : "hidden"}>
+        <EmprestimosScreen
+          emprestimos={emprestimos}
+          consorcios={consorcios}
+          items={despesaItems}
+          lancamentos={despesaLancamentos}
         />
       </div>
     </div>

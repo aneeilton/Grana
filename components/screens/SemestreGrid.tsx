@@ -11,6 +11,7 @@ type Linha = { id: string; nome: string; detalhe?: string; valores: (number | nu
 
 function detalheDoItem(item: Item, nomeCartao?: string): string | undefined {
   if (item.consorcio_id) return "consórcio";
+  if (item.emprestimo_id) return "empréstimo";
   if (nomeCartao) return item.parcelas_total ? `${item.parcelas_total}x · ${nomeCartao}` : nomeCartao;
   if (item.meses_recorrencia?.length && !item.fixo) return item.meses_recorrencia.length === 1 ? "anual" : "sazonal";
   if (item.cartao) return "cartão";

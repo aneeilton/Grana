@@ -10,6 +10,8 @@ export type Compromissos = {
   fixas: number;
   /** despesas pontuais/parceladas/sazonais ainda não pagas, mesma janela */
   pontuais: number;
+  /** saldo devedor dos empréstimos: todas as parcelas em aberto */
+  emprestimos: number;
   total: number;
 };
 
@@ -18,6 +20,9 @@ export const MESES_COMPROMISSO = 6;
 /**
  * O que já está comprometido e sai do patrimônio líquido: saldo devedor
  * dos cartões + despesas fixas e pontuais em aberto dos próximos 6 meses.
+ *
+ * Empréstimos entram pelo saldo devedor inteiro (todas as parcelas em
+ * aberto), não só pelos 6 meses.
  *
  * Sem contar nada duas vezes: faturas de cartão e compras feitas nos
  * cartões entram só pelo saldo devedor; parcelas de consórcio ficam de
@@ -43,7 +48,7 @@ export function calcularCompromissos(
     const competencia = shiftCompetencia(hoje, i);
     const efetivos = i === 0 ? efetivosHoje : valoresEfetivosPorItem(items, lancamentos, competencia);
     for (const item of items) {
-      if (item.tipo !== "despesa" || item.cartao || item.cartao_id || item.consorcio_id) continue;
+      if (item.tipo !== "despesa" || item.cartao || item.cartao_id || item.consorcio_id || item.emprestimo_id) continue;
       const ef = efetivos.get(item.id);
       if (!ef || ef.pago) continue;
       if (item.fixo) fixas += ef.valor;
@@ -51,5 +56,11 @@ export function calcularCompromissos(
     }
   }
 
-  return { cartoes, fixas, pontuais, total: cartoes + fixas + pontuais };
+  // Empréstimo é dívida inteira (não só 6 meses): todas as parcelas em aberto.
+  const idsEmprestimo = new Set(items.filter((i) => i.emprestimo_id).map((i) => i.id));
+  const emprestimos = lancamentos
+    .filter((l) => idsEmprestimo.has(l.item_id) && !l.pago)
+    .reduce((s, l) => s + Number(l.valor), 0);
+
+  return { cartoes, fixas, pontuais, emprestimos, total: cartoes + fixas + pontuais + emprestimos };
 }

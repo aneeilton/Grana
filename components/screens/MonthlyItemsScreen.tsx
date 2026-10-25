@@ -203,11 +203,15 @@ export function MonthlyItemsScreen({
     [itemsVisiveis, lancamentos]
   );
   const itemsParcelados = useMemo(
-    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.consorcio_id && !i.fixo && !ehSazonal(i) && i.parcelas_total)),
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => !i.consorcio_id && !i.emprestimo_id && !i.fixo && !ehSazonal(i) && i.parcelas_total)),
     [itemsVisiveis, lancamentos]
   );
   const itemsConsorcio = useMemo(
     () => ordenarPorPendente(itemsVisiveis.filter((i) => i.consorcio_id)),
+    [itemsVisiveis, lancamentos]
+  );
+  const itemsEmprestimo = useMemo(
+    () => ordenarPorPendente(itemsVisiveis.filter((i) => i.emprestimo_id)),
     [itemsVisiveis, lancamentos]
   );
   const itemsSazonais = useMemo(
@@ -835,6 +839,12 @@ export function MonthlyItemsScreen({
               <div className="space-y-2">
                 <h3 className="group-label">Consórcios</h3>
                 {itemsConsorcio.map(renderItem)}
+              </div>
+            )}
+            {itemsEmprestimo.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="group-label">Empréstimos</h3>
+                {itemsEmprestimo.map(renderItem)}
               </div>
             )}
             {itemsSazonais.length > 0 && (

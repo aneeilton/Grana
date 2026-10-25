@@ -49,6 +49,7 @@ export function DividasScreen({
     { label: "Cartões", hint: "inclui parcelas futuras", valor: compromissos?.cartoes ?? 0 },
     { label: "Despesas fixas", hint: "próximos 6 meses", valor: compromissos?.fixas ?? 0 },
     { label: "Despesas pontuais", hint: "próximos 6 meses", valor: compromissos?.pontuais ?? 0 },
+    { label: "Empréstimos", hint: "parcelas em aberto", valor: compromissos?.emprestimos ?? 0 },
     { label: "Consórcio contemplado", hint: "parcelas em aberto", valor: dividaConsorcio },
   ].filter((a) => a.valor > 0);
 

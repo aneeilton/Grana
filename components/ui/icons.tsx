@@ -9,6 +9,7 @@ import {
   CalendarDots,
   Car as PhCar,
   CaretDown as PhCaretDown,
+  HandCoins as PhHandCoins,
   CaretLeft,
   CaretRight,
   Check as PhCheck,
@@ -92,6 +93,7 @@ export const FlaskConical = wrap(Flask, "FlaskConical");
 export const Gamepad2 = wrap(GameController, "Gamepad2");
 export const Gavel = wrap(PhGavel, "Gavel");
 export const Gem = wrap(Diamond, "Gem");
+export const HandCoins = wrap(PhHandCoins, "HandCoins");
 export const Home = wrap(PhHouse, "Home");
 export const House = wrap(PhHouse, "House");
 export const Landmark = wrap(Bank, "Landmark");
